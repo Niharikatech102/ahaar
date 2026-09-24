@@ -4,6 +4,7 @@ export interface MenuItem {
   veg: boolean;
   price: number;
   tags: string[];
+  image?: string;
 }
 
 export interface Restaurant {

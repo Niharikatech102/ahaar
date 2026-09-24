@@ -45,10 +45,15 @@ export function recommendationsMessage(recs: Recommendation[]): string {
     const { entry } = r;
     const vegTag = entry.item.veg ? '🟢' : '🔴';
     return [
+      `[REC_START]`,
+      entry.item.image ? `[IMG:${entry.item.image}]` : '',
+      `[CONTENT_START]`,
       `*${i + 1}. ${entry.item.name}* ${vegTag}`,
       `${entry.restaurant.name} · ₹${entry.item.price}`,
       r.reason,
-    ].join('\n');
+      `[CONTENT_END]`,
+      `[REC_END]`
+    ].filter(Boolean).join('\n');
   });
 
   return [

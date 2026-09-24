@@ -35,9 +35,28 @@ function escapeHtml(text) {
 }
 
 function formatText(text) {
-  return escapeHtml(text)
+  let html = escapeHtml(text)
     .replace(/\*(.+?)\*/g, '<strong>$1</strong>')
+    .replace(/\[IMG:(.+?)\]/g, '<img src="$1" class="rec-item-img">')
+    .replace(/\[REC_START\]/g, '<div class="rec-item">')
+    .replace(/\[REC_END\]/g, '</div>')
+    .replace(/\[CONTENT_START\]/g, '<div class="rec-item-content">')
+    .replace(/\[CONTENT_END\]/g, '</div>')
     .replace(/\n/g, '<br>');
+
+  // Clean up adjacent <br> tags around our block elements so layout doesn't break
+  html = html.replace(/<div class="rec-item">\s*(<br>)?/g, '<div class="rec-item">');
+  html = html.replace(/(<br>)?\s*<div class="rec-item-content">/g, '<div class="rec-item-content">');
+  html = html.replace(/(<br>)?\s*<\/div>/g, '</div>');
+  html = html.replace(/<img([^>]+)>\s*(<br>)?/g, '<img$1>');
+  
+  // Strip any remaining <br> tags between the cards
+  html = html.replace(/<\/div>(<br>\s*)+<div class="rec-item">/g, '</div><div class="rec-item">');
+  // Also strip <br> tags before the first card and after the last card if they exist
+  html = html.replace(/(<br>\s*)+<div class="rec-item">/g, '<div class="rec-item">');
+  html = html.replace(/<\/div>(<br>\s*)+/g, '</div><br><br>'); 
+
+  return html;
 }
 
 function appendBubble(text, sender, quickReplies) {

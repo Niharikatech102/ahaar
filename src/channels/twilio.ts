@@ -56,7 +56,13 @@ export function createTwilioRouter(store: SessionStore): Router {
     try {
       const result = await processMessage(store, from, text);
       for (const reply of result.replies) {
-        twiml.message(reply);
+        const cleanReply = reply
+          .replace(/\[REC_START\]\n?/g, '')
+          .replace(/\[REC_END\]\n?/g, '')
+          .replace(/\[CONTENT_START\]\n?/g, '')
+          .replace(/\[CONTENT_END\]\n?/g, '')
+          .replace(/\[IMG:.+?\]\n?/g, '');
+        twiml.message(cleanReply);
       }
     } catch (err) {
       log.error('failed to process message', err);
