@@ -7,13 +7,20 @@ const state = {
 
 const transcriptEl = document.getElementById('transcript');
 const userListEl = document.getElementById('userList');
+const addUserOverlay = document.getElementById('addUserOverlay');
+const addUserForm = document.getElementById('addUserForm');
+const addUserClose = document.getElementById('addUserClose');
+const addUserCancel = document.getElementById('addUserCancel');
+const addUserErrorEl = document.getElementById('addUserError');
+const newUserNameInput = document.getElementById('newUserName');
+const newUserPhoneInput = document.getElementById('newUserPhone');
+const newUserAddressInput = document.getElementById('newUserAddress');
 const composer = document.getElementById('composer');
 const textInput = document.getElementById('textInput');
 const trackerEl = document.getElementById('orderTracker');
 const statusLineEl = document.getElementById('statusLine');
 
 const STEP_ORDER = ['CONFIRMED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
-const NEW_CUSTOMER = '__new__';
 // Must match FOCUS_INPUT_ACTION in src/core/stateMachine.ts exactly - a
 // quick reply with this value means "let the user type their own answer",
 // not "send this text as a message" (e.g. entering a new delivery address).
@@ -100,46 +107,107 @@ function buildQuickReplies(quickReplies) {
   return actions;
 }
 
-function randomGuestPhone() {
-  const n = Math.floor(1_000_000 + Math.random() * 8_999_999);
-  return `whatsapp:+1999${n}`;
-}
-
 function renderUserList() {
   userListEl.innerHTML = '';
 
   for (const u of state.users) {
-    userListEl.appendChild(buildUserRow(u.phone, u.name, 'Has order history', u.phone));
+    userListEl.appendChild(buildUserRow(u.phone, u.name, u.phone));
   }
-  userListEl.appendChild(buildUserRow(NEW_CUSTOMER, 'New customer', 'No saved history', null));
+  userListEl.appendChild(buildAddUserRow());
 }
 
-function buildUserRow(key, name, subtitle, phoneForAvatar) {
+function buildAddUserRow() {
+  const row = document.createElement('button');
+  row.type = 'button';
+  row.className = 'user-row add-user-row';
+  row.setAttribute('aria-label', 'Add a new customer');
+
+  const avatar = document.createElement('span');
+  avatar.className = 'user-avatar user-avatar-ghost';
+  avatar.textContent = '+';
+
+  const meta = document.createElement('span');
+  meta.className = 'user-meta';
+  const nameEl = document.createElement('span');
+  nameEl.className = 'user-name';
+  nameEl.textContent = 'Add new customer';
+  meta.appendChild(nameEl);
+
+  row.append(avatar, meta);
+  row.addEventListener('click', openAddUserModal);
+  return row;
+}
+
+function openAddUserModal() {
+  addUserErrorEl.classList.add('hidden');
+  addUserErrorEl.textContent = '';
+  addUserForm.reset();
+  addUserOverlay.classList.remove('hidden');
+  newUserNameInput.focus();
+}
+
+function closeAddUserModal() {
+  addUserOverlay.classList.add('hidden');
+}
+
+addUserClose.addEventListener('click', closeAddUserModal);
+addUserCancel.addEventListener('click', closeAddUserModal);
+addUserOverlay.addEventListener('click', (event) => {
+  if (event.target === addUserOverlay) closeAddUserModal();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !addUserOverlay.classList.contains('hidden')) closeAddUserModal();
+});
+
+addUserForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const name = newUserNameInput.value.trim();
+  if (!name) return;
+
+  const payload = { name };
+  const phone = newUserPhoneInput.value.trim();
+  if (phone) payload.phone = phone;
+  const address = newUserAddressInput.value.trim();
+  if (address) payload.address = address;
+
+  const res = await fetch('/sim/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    addUserErrorEl.textContent = data.error || 'Could not add this customer. Please try again.';
+    addUserErrorEl.classList.remove('hidden');
+    return;
+  }
+
+  const newUser = await res.json();
+  closeAddUserModal();
+  await loadUsers();
+  setActiveRow(newUser.phone);
+  switchUser(newUser.phone, newUser.name);
+});
+
+function buildUserRow(key, name, phoneForAvatar) {
   const row = document.createElement('button');
   row.type = 'button';
   row.className = 'user-row';
   row.dataset.key = key;
-  row.setAttribute('aria-label', `${name}, ${subtitle}`);
+  row.setAttribute('aria-label', name);
 
   const avatar = document.createElement('span');
   avatar.className = 'user-avatar';
-  if (phoneForAvatar) {
-    avatar.textContent = name.charAt(0).toUpperCase();
-    avatar.style.background = avatarColorFor(phoneForAvatar);
-  } else {
-    avatar.textContent = '+';
-    avatar.classList.add('user-avatar-ghost');
-  }
+  avatar.textContent = name.charAt(0).toUpperCase();
+  avatar.style.background = avatarColorFor(phoneForAvatar);
 
   const meta = document.createElement('span');
   meta.className = 'user-meta';
   const nameEl = document.createElement('span');
   nameEl.className = 'user-name';
   nameEl.textContent = name;
-  const subEl = document.createElement('span');
-  subEl.className = 'user-sub';
-  subEl.textContent = subtitle;
-  meta.append(nameEl, subEl);
+  meta.appendChild(nameEl);
 
   row.append(avatar, meta);
   row.addEventListener('click', () => selectUserRow(key));
@@ -153,11 +221,6 @@ function setActiveRow(key) {
 }
 
 function selectUserRow(key) {
-  if (key === NEW_CUSTOMER) {
-    setActiveRow(key);
-    switchUser(randomGuestPhone(), null);
-    return;
-  }
   const user = state.users.find((u) => u.phone === key);
   setActiveRow(key);
   switchUser(key, user ? user.name : null);
@@ -177,7 +240,7 @@ function closeStream() {
   }
 }
 
-function switchUser(phone, displayName) {
+async function switchUser(phone, displayName) {
   closeStream();
   state.phone = phone;
   state.orderId = null;
@@ -191,6 +254,26 @@ function switchUser(phone, displayName) {
       : "Hi! I'm your food ordering assistant. Tell me what you're craving.",
     'bot',
   );
+
+  // The chat transcript above is not persisted - refreshing always starts a
+  // fresh conversation. The order itself is, though (SessionStore keeps it
+  // server-side), so restore the live tracker if this phone has one going.
+  await restoreActiveOrder(phone);
+}
+
+async function restoreActiveOrder(phone) {
+  try {
+    const res = await fetch(`/sim/orders/current?phone=${encodeURIComponent(phone)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    // The user may have switched contacts again while this was in flight.
+    if (!data.order || state.phone !== phone) return;
+    state.orderId = data.order.id;
+    startTracking(data.order.id);
+    updateTrackerUI(data.order.status);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 composer.addEventListener('submit', (event) => {

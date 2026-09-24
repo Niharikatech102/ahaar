@@ -51,6 +51,126 @@ describe('POST /sim/message validation', () => {
   });
 });
 
+describe('POST /sim/users', () => {
+  it('registers a new customer and immediately lists them', async () => {
+    const createRes = await fetch(`${baseUrl}/sim/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Test Customer' }),
+    });
+    expect(createRes.status).toBe(201);
+    const created = await createRes.json();
+    expect(created.name).toBe('Test Customer');
+    expect(typeof created.phone).toBe('string');
+
+    const listRes = await fetch(`${baseUrl}/sim/users`);
+    const list = await listRes.json();
+    expect(list.users.some((u: { phone: string }) => u.phone === created.phone)).toBe(true);
+  });
+
+  it('rejects a request with no name', async () => {
+    const res = await fetch(`${baseUrl}/sim/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('accepts a customer with full details and saves the address as their default', async () => {
+    const res = await fetch(`${baseUrl}/sim/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Full Details Customer',
+        phone: '98765 12345',
+        address: '9 Full Detail Street, Chennai',
+      }),
+    });
+    expect(res.status).toBe(201);
+    const created = await res.json();
+    expect(created.phone).toBe('whatsapp:+919876512345');
+
+    // This customer should now behave like a seeded user - a fresh search
+    // and quantity should lead straight to their saved address, not a blank prompt.
+    async function send(text: string) {
+      const r = await fetch(`${baseUrl}/sim/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: created.phone, text }),
+      });
+      return r.json();
+    }
+    await send('Masala Dosa');
+    await send('1');
+    const addressPrompt = await send('1');
+    expect(addressPrompt.replies[0]).toContain('9 Full Detail Street, Chennai');
+  });
+
+  it('rejects a phone number that already belongs to another customer', async () => {
+    const first = await fetch(`${baseUrl}/sim/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'First Owner', phone: '9000000001' }),
+    });
+    expect(first.status).toBe(201);
+
+    const second = await fetch(`${baseUrl}/sim/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Second Claimant', phone: '9000000001' }),
+    });
+    expect(second.status).toBe(409);
+  });
+
+  it('rejects a phone number that is obviously not a real number', async () => {
+    const res = await fetch(`${baseUrl}/sim/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Bad Phone', phone: 'abc' }),
+    });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('GET /sim/orders/current', () => {
+  it('returns null when the phone has no active order', async () => {
+    const res = await fetch(`${baseUrl}/sim/orders/current?phone=${encodeURIComponent('whatsapp:+15551230003')}`);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.order).toBeNull();
+  });
+
+  it('returns the active order and its live status once one is placed', async () => {
+    const phone = 'whatsapp:+15551230088';
+    async function send(text: string) {
+      const res = await fetch(`${baseUrl}/sim/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, text }),
+      });
+      return res.json();
+    }
+
+    await send('Masala Dosa');
+    await send('1');
+    await send('1');
+    await send('YES');
+    await send('SKIP');
+    const confirmResult = await send('CONFIRM');
+
+    const res = await fetch(`${baseUrl}/sim/orders/current?phone=${encodeURIComponent(phone)}`);
+    const data = await res.json();
+    expect(data.order.id).toBe(confirmResult.orderId);
+    expect(data.order.status).toBe('CONFIRMED');
+  });
+
+  it('rejects a request with no phone', async () => {
+    const res = await fetch(`${baseUrl}/sim/orders/current`);
+    expect(res.status).toBe(400);
+  });
+});
+
 describe('full order flow over HTTP', () => {
   const phone = 'whatsapp:+15551230002'; // Meera - has south indian / dessert history
 

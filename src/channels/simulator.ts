@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { processMessage } from '../core/engine.js';
 import type { SessionStore } from '../core/session.js';
-import { getAllUsers } from '../domain/users.js';
+import { addUser, getAllUsers, isPhoneTaken, isPlausiblePhone, normalizePhone } from '../domain/users.js';
 import { statusAt } from '../domain/delivery.js';
 import { createLogger } from '../logger.js';
 
@@ -19,6 +19,52 @@ export function createSimulatorRouter(store: SessionStore): Router {
   router.get('/users', (_req: Request, res: Response) => {
     const users = getAllUsers().map((u) => ({ phone: u.phone, name: u.name }));
     res.json({ users });
+  });
+
+  router.post('/users', (req: Request, res: Response) => {
+    const { name, phone, address } = (req.body ?? {}) as {
+      name?: unknown;
+      phone?: unknown;
+      address?: unknown;
+    };
+    if (typeof name !== 'string' || !name.trim()) {
+      res.status(400).json({ error: 'name is required' });
+      return;
+    }
+
+    let resolvedPhone: string | undefined;
+    if (typeof phone === 'string' && phone.trim()) {
+      resolvedPhone = normalizePhone(phone);
+      if (!isPlausiblePhone(resolvedPhone)) {
+        res.status(400).json({ error: 'phone number looks invalid' });
+        return;
+      }
+      if (isPhoneTaken(resolvedPhone)) {
+        res.status(409).json({ error: 'a customer with this phone number already exists' });
+        return;
+      }
+    }
+
+    const addressLine = typeof address === 'string' && address.trim() ? address.trim() : undefined;
+    const profile = addUser(name.trim(), resolvedPhone, addressLine);
+    res.status(201).json({ phone: profile.phone, name: profile.name });
+  });
+
+  router.get('/orders/current', (req: Request, res: Response) => {
+    const phone = req.query['phone'];
+    if (typeof phone !== 'string' || !phone.trim()) {
+      res.status(400).json({ error: 'phone query parameter is required' });
+      return;
+    }
+
+    const session = store.get(phone, Date.now());
+    if (!session.currentOrder) {
+      res.json({ order: null });
+      return;
+    }
+
+    const status = statusAt(session.currentOrder.placedAt, Date.now());
+    res.json({ order: { id: session.currentOrder.id, status } });
   });
 
   router.post('/message', async (req: Request, res: Response) => {

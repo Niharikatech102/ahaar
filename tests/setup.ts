@@ -8,15 +8,10 @@ import { fileURLToPath } from 'node:url';
 // and process.loadEnvFile() never overrides an already-set variable.
 process.env.GROQ_API_KEY = '';
 
-// Tests must never depend on session state left over from a previous test
-// run, or from manually using `npm run dev` beforehand - both persist to
-// the same on-disk snapshot (SessionStore's default `persist: true`).
+// Tests must never depend on state left over from a previous test run, or
+// from manually using `npm run dev` beforehand - sessions and added
+// customers both persist to on-disk snapshots for exactly that reason.
 // Start every run from a guaranteed-clean slate regardless of what's there.
-const sessionsFile = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '..',
-  'src',
-  'data',
-  'sessions.json',
-);
-fs.rmSync(sessionsFile, { force: true });
+const dataDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'data');
+fs.rmSync(path.join(dataDir, 'sessions.json'), { force: true });
+fs.rmSync(path.join(dataDir, 'added_users.json'), { force: true });

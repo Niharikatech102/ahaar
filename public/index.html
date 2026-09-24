@@ -59,6 +59,39 @@
     </div>
   </div>
 
+  <div id="addUserOverlay" class="modal-overlay hidden">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="addUserTitle">
+      <div class="modal-header">
+        <h2 id="addUserTitle">Add new customer</h2>
+        <button type="button" id="addUserClose" class="modal-close" aria-label="Close">✕</button>
+      </div>
+
+      <form id="addUserForm" class="modal-form">
+        <label class="modal-field">
+          <span>Name</span>
+          <input id="newUserName" type="text" placeholder="e.g. Rahul Sharma" autocomplete="off" required />
+        </label>
+
+        <label class="modal-field">
+          <span>Contact number <em>(optional)</em></span>
+          <input id="newUserPhone" type="tel" placeholder="e.g. 98765 43210" autocomplete="off" />
+        </label>
+
+        <label class="modal-field">
+          <span>Delivery address <em>(optional)</em></span>
+          <input id="newUserAddress" type="text" placeholder="e.g. 12 MG Road, Bengaluru" autocomplete="off" />
+        </label>
+
+        <p id="addUserError" class="modal-error hidden"></p>
+
+        <div class="modal-actions">
+          <button type="button" id="addUserCancel" class="modal-btn secondary">Cancel</button>
+          <button type="submit" class="modal-btn primary">Add customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="/app.js"></script>
 </body>
 </html>
