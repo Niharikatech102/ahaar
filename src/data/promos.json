@@ -1,0 +1,80 @@
+[
+  {
+    "code": "WELCOME50",
+    "description": "50% off, up to Rs.100, on your first order",
+    "type": "percent",
+    "value": 50,
+    "maxDiscount": 100,
+    "minOrderValue": 150,
+    "firstOrderOnly": true,
+    "cuisineScope": null,
+    "restaurantScope": null,
+    "expired": false,
+    "usageLimitPerUser": 1
+  },
+  {
+    "code": "BIRYANI20",
+    "description": "20% off on biryani orders, up to Rs.80",
+    "type": "percent",
+    "value": 20,
+    "maxDiscount": 80,
+    "minOrderValue": 200,
+    "firstOrderOnly": false,
+    "cuisineScope": "biryani",
+    "restaurantScope": null,
+    "expired": false,
+    "usageLimitPerUser": 3
+  },
+  {
+    "code": "FLAT50",
+    "description": "Flat Rs.50 off on orders above Rs.300",
+    "type": "flat",
+    "value": 50,
+    "maxDiscount": 50,
+    "minOrderValue": 300,
+    "firstOrderOnly": false,
+    "cuisineScope": null,
+    "restaurantScope": null,
+    "expired": false,
+    "usageLimitPerUser": 5
+  },
+  {
+    "code": "SWEET10",
+    "description": "10% off at Sweet Tooth",
+    "type": "percent",
+    "value": 10,
+    "maxDiscount": 30,
+    "minOrderValue": 100,
+    "firstOrderOnly": false,
+    "cuisineScope": null,
+    "restaurantScope": "r10",
+    "expired": false,
+    "usageLimitPerUser": 2
+  },
+  {
+    "code": "MEGA100",
+    "description": "Flat Rs.100 off on orders above Rs.500",
+    "type": "flat",
+    "value": 100,
+    "maxDiscount": 100,
+    "minOrderValue": 500,
+    "firstOrderOnly": false,
+    "cuisineScope": null,
+    "restaurantScope": null,
+    "expired": false,
+    "usageLimitPerUser": 2
+  },
+  {
+    "code": "OLD25",
+    "description": "Expired promo kept to test expiry handling",
+    "type": "percent",
+    "value": 25,
+    "maxDiscount": 60,
+    "minOrderValue": 100,
+    "firstOrderOnly": false,
+    "cuisineScope": null,
+    "restaurantScope": null,
+    "expired": true,
+    "usageLimitPerUser": 1
+  }
+]

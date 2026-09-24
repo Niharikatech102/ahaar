@@ -1,0 +1,174 @@
+[
+  {
+    "id": "r01",
+    "name": "Biryani House",
+    "cuisines": ["biryani", "hyderabadi", "mughlai"],
+    "rating": 4.6,
+    "etaMinutes": 28,
+    "priceLevel": 2,
+    "available": true,
+    "items": [
+      { "id": "i0101", "name": "Veg Biryani", "veg": true, "price": 220, "tags": ["biryani", "rice", "spicy"] },
+      { "id": "i0102", "name": "Chicken Biryani", "veg": false, "price": 280, "tags": ["biryani", "rice", "spicy"] },
+      { "id": "i0103", "name": "Mutton Biryani", "veg": false, "price": 340, "tags": ["biryani", "rice", "spicy"] },
+      { "id": "i0104", "name": "Paneer Biryani", "veg": true, "price": 240, "tags": ["biryani", "rice", "paneer"] }
+    ]
+  },
+  {
+    "id": "r02",
+    "name": "Spice Junction",
+    "cuisines": ["biryani", "north indian", "mughlai"],
+    "rating": 4.3,
+    "etaMinutes": 35,
+    "priceLevel": 2,
+    "available": true,
+    "items": [
+      { "id": "i0201", "name": "Veg Dum Biryani", "veg": true, "price": 200, "tags": ["biryani", "rice", "spicy"] },
+      { "id": "i0202", "name": "Egg Biryani", "veg": false, "price": 230, "tags": ["biryani", "rice", "egg"] },
+      { "id": "i0203", "name": "Butter Chicken", "veg": false, "price": 300, "tags": ["curry", "creamy"] },
+      { "id": "i0204", "name": "Dal Makhani", "veg": true, "price": 190, "tags": ["curry", "creamy", "lentil"] }
+    ]
+  },
+  {
+    "id": "r03",
+    "name": "Nawab's Kitchen",
+    "cuisines": ["biryani", "mughlai", "hyderabadi"],
+    "rating": 4.7,
+    "etaMinutes": 40,
+    "priceLevel": 3,
+    "available": true,
+    "items": [
+      { "id": "i0301", "name": "Veg Biryani", "veg": true, "price": 260, "tags": ["biryani", "rice", "spicy", "premium"] },
+      { "id": "i0302", "name": "Hyderabadi Chicken Biryani", "veg": false, "price": 320, "tags": ["biryani", "rice", "spicy", "premium"] },
+      { "id": "i0303", "name": "Shahi Paneer", "veg": true, "price": 280, "tags": ["curry", "creamy", "paneer"] }
+    ]
+  },
+  {
+    "id": "r04",
+    "name": "Green Leaf",
+    "cuisines": ["south indian", "vegetarian"],
+    "rating": 4.4,
+    "etaMinutes": 22,
+    "priceLevel": 1,
+    "available": true,
+    "items": [
+      { "id": "i0401", "name": "Masala Dosa", "veg": true, "price": 120, "tags": ["dosa", "breakfast", "light"] },
+      { "id": "i0402", "name": "Veg Biryani", "veg": true, "price": 180, "tags": ["biryani", "rice", "light"] },
+      { "id": "i0403", "name": "Idli Sambar", "veg": true, "price": 90, "tags": ["breakfast", "light", "steamed"] },
+      { "id": "i0404", "name": "Curd Rice", "veg": true, "price": 110, "tags": ["rice", "light", "cooling"] }
+    ]
+  },
+  {
+    "id": "r05",
+    "name": "Punjabi Tadka",
+    "cuisines": ["north indian", "punjabi"],
+    "rating": 4.5,
+    "etaMinutes": 30,
+    "priceLevel": 2,
+    "available": true,
+    "items": [
+      { "id": "i0501", "name": "Chole Bhature", "veg": true, "price": 160, "tags": ["fried", "spicy", "punjabi"] },
+      { "id": "i0502", "name": "Paneer Tikka", "veg": true, "price": 240, "tags": ["grilled", "paneer", "starter"] },
+      { "id": "i0503", "name": "Veg Biryani", "veg": true, "price": 210, "tags": ["biryani", "rice", "spicy"] },
+      { "id": "i0504", "name": "Tandoori Roti", "veg": true, "price": 30, "tags": ["bread", "tandoor"] }
+    ]
+  },
+  {
+    "id": "r06",
+    "name": "Curry Leaf Express",
+    "cuisines": ["south indian", "biryani"],
+    "rating": 3.8,
+    "etaMinutes": 25,
+    "priceLevel": 1,
+    "available": true,
+    "items": [
+      { "id": "i0601", "name": "Veg Biryani", "veg": true, "price": 150, "tags": ["biryani", "rice", "budget"] },
+      { "id": "i0602", "name": "Chicken 65", "veg": false, "price": 190, "tags": ["fried", "spicy", "starter"] }
+    ]
+  },
+  {
+    "id": "r07",
+    "name": "Pizza Point",
+    "cuisines": ["italian", "fast food"],
+    "rating": 4.2,
+    "etaMinutes": 32,
+    "priceLevel": 2,
+    "available": true,
+    "items": [
+      { "id": "i0701", "name": "Margherita Pizza", "veg": true, "price": 250, "tags": ["pizza", "cheese", "italian"] },
+      { "id": "i0702", "name": "Farmhouse Pizza", "veg": true, "price": 290, "tags": ["pizza", "cheese", "veggie"] },
+      { "id": "i0703", "name": "Chicken Pepperoni Pizza", "veg": false, "price": 340, "tags": ["pizza", "cheese", "meat"] },
+      { "id": "i0704", "name": "Garlic Bread", "veg": true, "price": 110, "tags": ["bread", "starter", "cheese"] }
+    ]
+  },
+  {
+    "id": "r08",
+    "name": "Wok This Way",
+    "cuisines": ["chinese", "asian"],
+    "rating": 4.1,
+    "etaMinutes": 27,
+    "priceLevel": 2,
+    "available": true,
+    "items": [
+      { "id": "i0801", "name": "Veg Fried Rice", "veg": true, "price": 170, "tags": ["rice", "chinese", "light"] },
+      { "id": "i0802", "name": "Chicken Manchurian", "veg": false, "price": 230, "tags": ["chinese", "spicy", "gravy"] },
+      { "id": "i0803", "name": "Veg Hakka Noodles", "veg": true, "price": 160, "tags": ["noodles", "chinese", "light"] },
+      { "id": "i0804", "name": "Chilli Paneer", "veg": true, "price": 220, "tags": ["chinese", "spicy", "paneer"] }
+    ]
+  },
+  {
+    "id": "r09",
+    "name": "Burger Barn",
+    "cuisines": ["fast food", "american"],
+    "rating": 4.0,
+    "etaMinutes": 20,
+    "priceLevel": 1,
+    "available": true,
+    "items": [
+      { "id": "i0901", "name": "Veg Burger", "veg": true, "price": 130, "tags": ["burger", "fast food", "budget"] },
+      { "id": "i0902", "name": "Chicken Burger", "veg": false, "price": 170, "tags": ["burger", "fast food"] },
+      { "id": "i0903", "name": "Loaded Fries", "veg": true, "price": 140, "tags": ["fries", "cheese", "snack"] }
+    ]
+  },
+  {
+    "id": "r10",
+    "name": "Sweet Tooth",
+    "cuisines": ["desserts", "bakery"],
+    "rating": 4.8,
+    "etaMinutes": 25,
+    "priceLevel": 2,
+    "available": true,
+    "items": [
+      { "id": "i1001", "name": "Chocolate Brownie", "veg": true, "price": 90, "tags": ["dessert", "chocolate"] },
+      { "id": "i1002", "name": "Gulab Jamun", "veg": true, "price": 80, "tags": ["dessert", "indian", "sweet"] },
+      { "id": "i1003", "name": "Cheesecake", "veg": true, "price": 150, "tags": ["dessert", "cheese", "sweet"] }
+    ]
+  },
+  {
+    "id": "r11",
+    "name": "Coastal Curry Co.",
+    "cuisines": ["south indian", "seafood"],
+    "rating": 4.5,
+    "etaMinutes": 38,
+    "priceLevel": 2,
+    "available": true,
+    "items": [
+      { "id": "i1101", "name": "Fish Curry Rice", "veg": false, "price": 260, "tags": ["seafood", "rice", "spicy"] },
+      { "id": "i1102", "name": "Prawn Biryani", "veg": false, "price": 310, "tags": ["biryani", "seafood", "rice"] },
+      { "id": "i1103", "name": "Veg Biryani", "veg": true, "price": 230, "tags": ["biryani", "rice", "coastal"] }
+    ]
+  },
+  {
+    "id": "r12",
+    "name": "Late Night Tandoor",
+    "cuisines": ["north indian", "tandoor"],
+    "rating": 3.6,
+    "etaMinutes": 45,
+    "priceLevel": 1,
+    "available": true,
+    "items": [
+      { "id": "i1201", "name": "Veg Biryani", "veg": true, "price": 170, "tags": ["biryani", "rice", "budget"] },
+      { "id": "i1202", "name": "Chicken Tikka", "veg": false, "price": 210, "tags": ["tandoor", "grilled", "spicy"] }
+    ]
+  }
+]

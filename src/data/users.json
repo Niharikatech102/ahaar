@@ -1,0 +1,37 @@
+[
+  {
+    "phone": "whatsapp:+15551230001",
+    "name": "Aryan",
+    "addresses": [
+      { "id": "a1", "label": "Home", "line": "12 MG Road, Bengaluru 560001", "isDefault": true }
+    ],
+    "orderHistory": [
+      { "restaurantId": "r01", "itemId": "i0101", "cuisine": "biryani", "daysAgo": 4, "rating": 5 },
+      { "restaurantId": "r01", "itemId": "i0102", "cuisine": "biryani", "daysAgo": 18, "rating": 4 },
+      { "restaurantId": "r03", "itemId": "i0301", "cuisine": "biryani", "daysAgo": 40, "rating": 5 },
+      { "restaurantId": "r07", "itemId": "i0701", "cuisine": "italian", "daysAgo": 10, "rating": 4 }
+    ]
+  },
+  {
+    "phone": "whatsapp:+15551230002",
+    "name": "Meera",
+    "addresses": [
+      { "id": "a1", "label": "Home", "line": "48 Park Street, Kolkata 700016", "isDefault": true },
+      { "id": "a2", "label": "Office", "line": "Tower B, Sector 5 Salt Lake, Kolkata 700091", "isDefault": false }
+    ],
+    "orderHistory": [
+      { "restaurantId": "r04", "itemId": "i0402", "cuisine": "south indian", "daysAgo": 2, "rating": 5 },
+      { "restaurantId": "r04", "itemId": "i0401", "cuisine": "south indian", "daysAgo": 9, "rating": 5 },
+      { "restaurantId": "r08", "itemId": "i0801", "cuisine": "chinese", "daysAgo": 15, "rating": 4 },
+      { "restaurantId": "r10", "itemId": "i1002", "cuisine": "desserts", "daysAgo": 3, "rating": 5 }
+    ]
+  },
+  {
+    "phone": "whatsapp:+15551230003",
+    "name": "Rohan",
+    "addresses": [
+      { "id": "a1", "label": "Home", "line": "221 Baker Colony, Pune 411045", "isDefault": true }
+    ],
+    "orderHistory": []
+  }
+]
