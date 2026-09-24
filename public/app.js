@@ -6,27 +6,24 @@ const state = {
 };
 
 const transcriptEl = document.getElementById('transcript');
-const userSelect = document.getElementById('userSelect');
-const userHintEl = document.getElementById('userHint');
+const userListEl = document.getElementById('userList');
 const composer = document.getElementById('composer');
 const textInput = document.getElementById('textInput');
-const quickActionsEl = document.getElementById('quickActions');
 const trackerEl = document.getElementById('orderTracker');
 const statusLineEl = document.getElementById('statusLine');
 
-const QUICK_ACTIONS = ['Veg Biryani', '1', '2', 'YES', 'SKIP', 'CONFIRM', 'STATUS', 'MENU', 'HELP'];
 const STEP_ORDER = ['CONFIRMED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+const NEW_CUSTOMER = '__new__';
 
-function renderQuickActions() {
-  quickActionsEl.innerHTML = '';
-  for (const label of QUICK_ACTIONS) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'quick-chip';
-    btn.textContent = label;
-    btn.addEventListener('click', () => sendMessage(label));
-    quickActionsEl.appendChild(btn);
-  }
+// Deterministic per-phone avatar color, so a contact keeps the same color
+// across reloads without hardcoding a palette entry per demo user. Kept
+// clear of green - that's the app's own accent color, used for bubbles,
+// buttons and the active-row highlight, so avatars need to read as distinct.
+const AVATAR_PALETTE = ['#5b6bd6', '#e2725b', '#a1558c', '#c2984f', '#3f7ea6', '#c2555f'];
+function avatarColorFor(phone) {
+  let hash = 0;
+  for (let i = 0; i < phone.length; i++) hash = (hash * 31 + phone.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
 }
 
 function escapeHtml(text) {
@@ -47,27 +44,74 @@ function appendBubble(text, sender) {
   transcriptEl.scrollTop = transcriptEl.scrollHeight;
 }
 
+function randomGuestPhone() {
+  const n = Math.floor(1_000_000 + Math.random() * 8_999_999);
+  return `whatsapp:+1999${n}`;
+}
+
+function renderUserList() {
+  userListEl.innerHTML = '';
+
+  for (const u of state.users) {
+    userListEl.appendChild(buildUserRow(u.phone, u.name, 'Has order history', u.phone));
+  }
+  userListEl.appendChild(buildUserRow(NEW_CUSTOMER, 'New customer', 'No saved history', null));
+}
+
+function buildUserRow(key, name, subtitle, phoneForAvatar) {
+  const row = document.createElement('button');
+  row.type = 'button';
+  row.className = 'user-row';
+  row.dataset.key = key;
+  row.setAttribute('aria-label', `${name}, ${subtitle}`);
+
+  const avatar = document.createElement('span');
+  avatar.className = 'user-avatar';
+  if (phoneForAvatar) {
+    avatar.textContent = name.charAt(0).toUpperCase();
+    avatar.style.background = avatarColorFor(phoneForAvatar);
+  } else {
+    avatar.textContent = '+';
+    avatar.classList.add('user-avatar-ghost');
+  }
+
+  const meta = document.createElement('span');
+  meta.className = 'user-meta';
+  const nameEl = document.createElement('span');
+  nameEl.className = 'user-name';
+  nameEl.textContent = name;
+  const subEl = document.createElement('span');
+  subEl.className = 'user-sub';
+  subEl.textContent = subtitle;
+  meta.append(nameEl, subEl);
+
+  row.append(avatar, meta);
+  row.addEventListener('click', () => selectUserRow(key));
+  return row;
+}
+
+function setActiveRow(key) {
+  userListEl.querySelectorAll('.user-row').forEach((el) => {
+    el.classList.toggle('active', el.dataset.key === key);
+  });
+}
+
+function selectUserRow(key) {
+  if (key === NEW_CUSTOMER) {
+    setActiveRow(key);
+    switchUser(randomGuestPhone(), null);
+    return;
+  }
+  const user = state.users.find((u) => u.phone === key);
+  setActiveRow(key);
+  switchUser(key, user ? user.name : null);
+}
+
 async function loadUsers() {
   const res = await fetch('/sim/users');
   const data = await res.json();
   state.users = data.users;
-
-  userSelect.innerHTML = '';
-  for (const u of state.users) {
-    const opt = document.createElement('option');
-    opt.value = u.phone;
-    opt.textContent = `${u.name} (has order history)`;
-    userSelect.appendChild(opt);
-  }
-  const customOpt = document.createElement('option');
-  customOpt.value = '__new__';
-  customOpt.textContent = 'New customer (no history)';
-  userSelect.appendChild(customOpt);
-}
-
-function randomGuestPhone() {
-  const n = Math.floor(1_000_000 + Math.random() * 8_999_999);
-  return `whatsapp:+1999${n}`;
+  renderUserList();
 }
 
 function closeStream() {
@@ -84,9 +128,6 @@ function switchUser(phone, displayName) {
   transcriptEl.innerHTML = '';
   trackerEl.classList.add('hidden');
   statusLineEl.textContent = 'online';
-  userHintEl.textContent = displayName
-    ? `Chatting as ${displayName} · ${phone.replace('whatsapp:', '')}`
-    : `New number, no saved history · ${phone.replace('whatsapp:', '')}`;
 
   appendBubble(
     displayName
@@ -95,16 +136,6 @@ function switchUser(phone, displayName) {
     'bot',
   );
 }
-
-userSelect.addEventListener('change', () => {
-  const value = userSelect.value;
-  if (value === '__new__') {
-    switchUser(randomGuestPhone(), null);
-    return;
-  }
-  const user = state.users.find((u) => u.phone === value);
-  switchUser(value, user ? user.name : null);
-});
 
 composer.addEventListener('submit', (event) => {
   event.preventDefault();
@@ -164,11 +195,9 @@ function startTracking(orderId) {
 }
 
 async function init() {
-  renderQuickActions();
   await loadUsers();
   if (state.users.length > 0) {
-    userSelect.value = state.users[0].phone;
-    switchUser(state.users[0].phone, state.users[0].name);
+    selectUserRow(state.users[0].phone);
   }
 }
 

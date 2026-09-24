@@ -67,6 +67,16 @@ describe('recommend', () => {
     expect(results.length).toBeLessThanOrEqual(3);
   });
 
+  it('regression: does not credit an unrelated item to a cuisine the item itself has nothing to do with', () => {
+    // Spice Junction serves "biryani" among its cuisines, and Aryan has
+    // ordered biryani before - but Masala Chai is a chai, not a biryani, so
+    // the reason text must not claim it "matches your usual biryani orders".
+    const results = recommend('drink', aryanHistory);
+    const masalaChai = results.find((r) => r.entry.item.name === 'Masala Chai');
+    expect(masalaChai).toBeDefined();
+    expect(masalaChai!.reason).not.toContain('biryani');
+  });
+
   it('regression: a filler-word query only returns genuinely relevant dishes, not history-biased noise', () => {
     // Previously "i" (from "I want") fuzzy-matched almost any dish containing
     // the letter i (e.g. "b[i]ryani"), so a user's past-ordered items could

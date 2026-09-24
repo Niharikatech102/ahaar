@@ -16,10 +16,10 @@ npm run dev
 ```
 
 Open **http://localhost:3000** — that's the whole demo. No Twilio account,
-phone number, or `.env` file required. Pick a demo user from the dropdown
-(each has different order history) and type "Veg Biryani", or just tap the
-quick-action chips to click through the entire flow: search → select →
-quantity → address → promo → confirm → live delivery tracking.
+phone number, or `.env` file required. Pick a contact from the sidebar
+(each has different order history) and type a dish, e.g. "Veg Biryani", to
+walk the full flow: search → select → quantity → address → promo → confirm
+→ live delivery tracking.
 
 ## Why two channels
 

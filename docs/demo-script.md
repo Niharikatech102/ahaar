@@ -5,13 +5,13 @@ open http://localhost:3000 first.
 
 ## Setup
 
-The user dropdown defaults to **Aryan**, who has ordered Veg/Chicken Biryani
-from *Biryani House* and *Nawab's Kitchen* before — that history is what
-makes the ranking visibly personalized in step 2.
+The sidebar contact list defaults to **Aryan**, who has ordered Veg/Chicken
+Biryani from *Biryani House* and *Nawab's Kitchen* before — that history is
+what makes the ranking visibly personalized in step 2.
 
 ## 1. Requesting an item
 
-Type (or tap the **Veg Biryani** quick-action chip):
+Type:
 
 > Veg Biryani
 
@@ -28,13 +28,12 @@ The three results returned are:
 2. **Biryani House** — *"you've ordered this exact dish before"*
 3. **Spice Junction** — *"matches your usual biryani orders"*
 
-**What to point out:** switch the user dropdown to **Rohan** (no order
-history) and repeat the search — the top two results stay Nawab's Kitchen
-and Biryani House (driven by rating/ETA/price alone, no history signal
-available), and the third slot changes to a restaurant that was previously
-outranked by Aryan's order history. This shows the ranker degrades
-gracefully for a new customer rather than breaking. Switch back to Aryan to
-continue the flow.
+**What to point out:** click **Rohan** in the sidebar (no order history) and
+repeat the search — the top two results stay Nawab's Kitchen and Biryani
+House (driven by rating/ETA/price alone, no history signal available), and
+the third slot changes to a restaurant that was previously outranked by
+Aryan's order history. This shows the ranker degrades gracefully for a new
+customer rather than breaking. Click back to Aryan to continue the flow.
 
 ## 3. Three relevant, distinct options
 
@@ -43,7 +42,7 @@ kitchen) — the *"recommend three relevant options"* requirement.
 
 ## 4. Selecting and completing the order through delivery
 
-Tap through, or type:
+Type each in turn:
 
 ```
 1          -> selects Nawab's Kitchen Veg Biryani

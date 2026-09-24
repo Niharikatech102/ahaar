@@ -7,50 +7,56 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="side-panel">
-      <h1>Ahaar</h1>
-      <p class="tagline">WhatsApp food-ordering bot — local simulator</p>
-
-      <label class="field-label" for="userSelect">Demo user</label>
-      <select id="userSelect" class="user-select"></select>
-      <p class="hint" id="userHint"></p>
-
-      <div class="quick-actions" id="quickActions"></div>
-
-      <p class="hint small">
-        This simulator runs the exact same conversation engine as the WhatsApp
-        integration — no credentials needed. Switching users switches the
-        conversation, so you can see order history change the recommendations.
-      </p>
-    </aside>
-
-    <main class="phone-frame">
-      <header class="chat-header">
-        <div class="avatar">🍽️</div>
-        <div class="header-text">
-          <div class="title">Ahaar Food Bot</div>
-          <div class="subtitle" id="statusLine">online</div>
+  <div class="stage">
+    <div class="app-shell">
+      <aside class="side-panel">
+        <div class="brand">
+          <div class="brand-mark">🍽️</div>
+          <div class="brand-text">
+            <div class="brand-name">Ahaar</div>
+            <div class="brand-tag">Local WhatsApp bot simulator</div>
+          </div>
         </div>
-      </header>
 
-      <div id="orderTracker" class="order-tracker hidden">
-        <div class="tracker-title" id="trackerTitle">Order status</div>
-        <div class="tracker-steps">
-          <div class="step" data-step="CONFIRMED"><span class="dot"></span>Confirmed</div>
-          <div class="step" data-step="PREPARING"><span class="dot"></span>Preparing</div>
-          <div class="step" data-step="OUT_FOR_DELIVERY"><span class="dot"></span>Out for delivery</div>
-          <div class="step" data-step="DELIVERED"><span class="dot"></span>Delivered</div>
+        <div class="panel-section">
+          <div class="section-label">Chatting as</div>
+          <div id="userList" class="user-list"></div>
         </div>
-      </div>
 
-      <div id="transcript" class="transcript"></div>
+        <p class="panel-footer">
+          This simulator runs the exact same conversation engine as the WhatsApp
+          integration — no credentials needed. Switching contacts switches the
+          conversation, so you can see order history change the recommendations.
+        </p>
+      </aside>
 
-      <form id="composer" class="composer">
-        <input id="textInput" type="text" placeholder="Type a dish, e.g. Veg Biryani" autocomplete="off" />
-        <button type="submit">Send</button>
-      </form>
-    </main>
+      <main class="chat-wrap">
+        <header class="chat-header">
+          <div class="avatar">🍽️</div>
+          <div class="header-text">
+            <div class="title">Ahaar Food Bot</div>
+            <div class="subtitle"><span class="pulse-dot"></span><span id="statusLine">online</span></div>
+          </div>
+        </header>
+
+        <div id="orderTracker" class="order-tracker hidden">
+          <div class="tracker-title" id="trackerTitle">Order status</div>
+          <div class="tracker-steps">
+            <div class="step" data-step="CONFIRMED"><span class="dot"></span>Confirmed</div>
+            <div class="step" data-step="PREPARING"><span class="dot"></span>Preparing</div>
+            <div class="step" data-step="OUT_FOR_DELIVERY"><span class="dot"></span>Out for delivery</div>
+            <div class="step" data-step="DELIVERED"><span class="dot"></span>Delivered</div>
+          </div>
+        </div>
+
+        <div id="transcript" class="transcript"></div>
+
+        <form id="composer" class="composer">
+          <input id="textInput" type="text" placeholder="Type a dish, e.g. Veg Biryani" autocomplete="off" />
+          <button type="submit">Send</button>
+        </form>
+      </main>
+    </div>
   </div>
 
   <script src="/app.js"></script>

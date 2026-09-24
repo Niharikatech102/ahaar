@@ -36,18 +36,19 @@ interface HistorySignal {
   score: number;
   sameRestaurantCount: number;
   sameDishOrdered: boolean;
-  sameCuisineCount: number;
+  /** Cuisines the user has ordered before that this restaurant also serves - a scoring signal, not yet verified against this specific item. */
+  matchedCuisines: Set<string>;
 }
 
 function historyAffinity(entry: CatalogEntry, history: PastOrder[]): HistorySignal {
   if (history.length === 0) {
-    return { score: 0, sameRestaurantCount: 0, sameDishOrdered: false, sameCuisineCount: 0 };
+    return { score: 0, sameRestaurantCount: 0, sameDishOrdered: false, matchedCuisines: new Set() };
   }
 
   let restaurantWeight = 0;
   let cuisineWeight = 0;
   let sameRestaurantCount = 0;
-  let sameCuisineCount = 0;
+  const matchedCuisines = new Set<string>();
   let sameDishOrdered = false;
 
   for (const order of history) {
@@ -61,13 +62,28 @@ function historyAffinity(entry: CatalogEntry, history: PastOrder[]): HistorySign
     }
     if (entry.restaurant.cuisines.includes(order.cuisine)) {
       cuisineWeight += w * satisfactionFactor * 0.5; // cuisine match counts for less than the exact restaurant
-      sameCuisineCount += 1;
+      matchedCuisines.add(order.cuisine);
     }
   }
 
   const dishBonus = sameDishOrdered ? 0.25 : 0;
   const score = clamp01(restaurantWeight + cuisineWeight + dishBonus);
-  return { score, sameRestaurantCount, sameDishOrdered, sameCuisineCount };
+  return { score, sameRestaurantCount, sameDishOrdered, matchedCuisines };
+}
+
+/**
+ * A cuisine match is only worth mentioning in the reason text if the
+ * recommended item itself carries that cuisine as a tag - otherwise the
+ * restaurant merely serves that cuisine *among other things*, and naming it
+ * produces a misleading reason (e.g. crediting a chai to "your usual
+ * biryani orders" just because the restaurant also sells biryani).
+ */
+function relevantCuisineMatch(entry: CatalogEntry, matchedCuisines: Set<string>): string | null {
+  const itemTags = entry.item.tags.map((t) => t.toLowerCase());
+  for (const cuisine of matchedCuisines) {
+    if (itemTags.includes(cuisine.toLowerCase())) return cuisine;
+  }
+  return null;
 }
 
 /** How close the item's price is to the user's typical spend (median of past order-adjacent prices, or a flat default). */
@@ -87,14 +103,16 @@ function estimateTypicalSpend(history: PastOrder[], fallback: number): number {
 function buildReason(entry: CatalogEntry, history: HistorySignal, queryScore: number): string {
   const parts: string[] = [];
 
+  const cuisineMatch = relevantCuisineMatch(entry, history.matchedCuisines);
+
   if (history.sameDishOrdered) {
     parts.push("you've ordered this exact dish before");
   } else if (history.sameRestaurantCount > 0) {
     parts.push(
       `you've ordered from ${entry.restaurant.name} ${history.sameRestaurantCount}x before`,
     );
-  } else if (history.sameCuisineCount > 0) {
-    parts.push(`matches your usual ${entry.restaurant.cuisines[0]} orders`);
+  } else if (cuisineMatch) {
+    parts.push(`matches your usual ${cuisineMatch} orders`);
   }
 
   parts.push(`${entry.restaurant.rating.toFixed(1)}\u2605`);
