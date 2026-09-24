@@ -21,15 +21,20 @@ export function createSimulatorRouter(store: SessionStore): Router {
     res.json({ users });
   });
 
-  router.post('/message', (req: Request, res: Response) => {
+  router.post('/message', async (req: Request, res: Response) => {
     const { phone, text } = (req.body ?? {}) as { phone?: unknown; text?: unknown };
     if (typeof phone !== 'string' || !phone.trim() || typeof text !== 'string') {
       res.status(400).json({ error: 'phone and text are required' });
       return;
     }
 
-    const result = processMessage(store, phone, text);
-    res.json(result);
+    try {
+      const result = await processMessage(store, phone, text);
+      res.json(result);
+    } catch (err) {
+      log.error('failed to process message', err);
+      res.status(500).json({ error: 'internal_error' });
+    }
   });
 
   router.get('/orders/:orderId/stream', (req: Request, res: Response) => {

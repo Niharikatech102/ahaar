@@ -3,7 +3,14 @@ import { bestApplicablePromo, evaluatePromo, getPromoByCode } from '../domain/pr
 import { computeBill, generateOrderId, type CartItem, type Order } from '../domain/order.js';
 import { statusAt } from '../domain/delivery.js';
 import type { UserProfile } from '../domain/types.js';
-import { parseGlobalCommand, parseQuantity, parseQuery, parseSelection, isWord } from './intent.js';
+import {
+  parseGlobalCommand,
+  parseQuantity,
+  parseQuery,
+  parseSelection,
+  isWord,
+  type ParsedQuery,
+} from './intent.js';
 import * as msg from './messages.js';
 import { resetToIdle, type Session } from './session.js';
 
@@ -12,6 +19,8 @@ export interface Ctx {
   now: number;
   /** Overridable for deterministic tests; defaults to a timestamp+random id. */
   orderIdFactory?: () => string;
+  /** Pre-parsed query (e.g. from the LLM intent layer) to use instead of the regex parser below. */
+  parsedQueryOverride?: ParsedQuery;
 }
 
 export interface StepResult {
@@ -29,7 +38,7 @@ function handleIdle(session: Session, text: string, ctx: Ctx): StepResult {
     return { session, replies: [msg.welcomeMessage()] };
   }
 
-  const query = parseQuery(trimmed);
+  const query = ctx.parsedQueryOverride ?? parseQuery(trimmed);
   const recs = recommend(query.raw, ctx.profile.orderHistory, {
     vegOnly: query.vegOnly,
     maxPrice: query.maxPrice,

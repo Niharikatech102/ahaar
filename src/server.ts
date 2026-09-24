@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { config, isTwilioConfigured, PUBLIC_DIR } from './config.js';
 import { createLogger } from './logger.js';
 import { createSimulatorRouter } from './channels/simulator.js';
+import { createTwilioRouter } from './channels/twilio.js';
 import { SessionStore } from './core/session.js';
 
 const log = createLogger('server');
@@ -36,6 +37,7 @@ export function createApp(): Express {
   });
 
   app.use('/sim', createSimulatorRouter(sessionStore));
+  app.use('/webhook/twilio', createTwilioRouter(sessionStore));
 
   app.use(express.static(PUBLIC_DIR));
 

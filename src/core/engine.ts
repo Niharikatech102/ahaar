@@ -1,5 +1,7 @@
 import { getProfileOrGuest } from '../domain/users.js';
 import { handleMessage } from './stateMachine.js';
+import { parseGlobalCommand } from './intent.js';
+import { parseQueryWithLLM } from './llmIntent.js';
 import type { SessionStore } from './session.js';
 
 export interface EngineResult {
@@ -11,18 +13,29 @@ export interface EngineResult {
 /**
  * Shared entry point for every channel adapter: loads the session for this
  * phone number, resolves the user's profile (or a cold-start guest profile),
- * runs the pure state machine, and persists the result. Keeping this in one
+ * optionally runs the LLM intent layer for a fresh free-text search, runs
+ * the pure state machine, and persists the result. Keeping this in one
  * place means the simulator and Twilio adapters can't drift on wiring.
  */
-export function processMessage(
+export async function processMessage(
   store: SessionStore,
   phone: string,
   text: string,
   now: number = Date.now(),
-): EngineResult {
+): Promise<EngineResult> {
   const session = store.get(phone, now);
   const profile = getProfileOrGuest(phone);
-  const { session: nextSession, replies } = handleMessage(session, text, { profile, now });
+
+  // Only worth calling the LLM for a fresh free-text search - global
+  // commands and every other state are handled deterministically already.
+  const isFreshSearch = session.state === 'IDLE' && text.trim() !== '' && parseGlobalCommand(text) === null;
+  const parsedQueryOverride = isFreshSearch ? (await parseQueryWithLLM(text)) ?? undefined : undefined;
+
+  const { session: nextSession, replies } = handleMessage(session, text, {
+    profile,
+    now,
+    parsedQueryOverride,
+  });
   store.set(nextSession);
   return { replies, orderId: nextSession.currentOrder?.id ?? null };
 }

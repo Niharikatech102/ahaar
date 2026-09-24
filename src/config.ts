@@ -44,7 +44,16 @@ export const config = {
     whatsappFrom: str('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886'),
     validateSignature: bool('TWILIO_VALIDATE_SIGNATURE', false),
   },
+  groq: {
+    apiKey: str('GROQ_API_KEY'),
+    model: str('GROQ_MODEL', 'openai/gpt-oss-20b'),
+  },
 } as const;
+
+/** True when a Groq key is configured - otherwise intent parsing falls back to the keyword parser. */
+export function isLlmConfigured(): boolean {
+  return Boolean(config.groq.apiKey);
+}
 
 /** True when there are enough credentials to actually reach WhatsApp. */
 export function isTwilioConfigured(): boolean {
