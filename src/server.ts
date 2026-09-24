@@ -3,6 +3,8 @@ import type { Server } from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { config, isTwilioConfigured, PUBLIC_DIR } from './config.js';
 import { createLogger } from './logger.js';
+import { createSimulatorRouter } from './channels/simulator.js';
+import { SessionStore } from './core/session.js';
 
 const log = createLogger('server');
 
@@ -10,6 +12,7 @@ const startedAt = Date.now();
 
 export function createApp(): Express {
   const app = express();
+  const sessionStore = new SessionStore();
 
   // Twilio posts application/x-www-form-urlencoded; the simulator posts JSON.
   app.use(express.json());
@@ -32,14 +35,9 @@ export function createApp(): Express {
     });
   });
 
-  app.use(express.static(PUBLIC_DIR));
+  app.use('/sim', createSimulatorRouter(sessionStore));
 
-  app.get('/', (_req: Request, res: Response) => {
-    res.json({
-      name: 'whatsapp-food-bot',
-      message: 'Simulator UI is not built yet. Try GET /health.',
-    });
-  });
+  app.use(express.static(PUBLIC_DIR));
 
   app.use((_req: Request, res: Response) => {
     res.status(404).json({ error: 'not_found' });
