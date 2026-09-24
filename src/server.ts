@@ -52,9 +52,11 @@ export function createApp(): Express {
 
   return app;
 }
+const app = createApp();
 
+export default app;
 export function start(): Server {
-  const app = createApp();
+  
   const server = app.listen(config.port, () => {
     log.info(`listening on http://localhost:${config.port}`);
     log.info(`twilio: ${isTwilioConfigured() ? 'configured' : 'not configured (simulator only)'}`);
