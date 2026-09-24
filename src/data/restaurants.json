@@ -11,7 +11,9 @@
       { "id": "i0101", "name": "Veg Biryani", "veg": true, "price": 220, "tags": ["biryani", "rice", "spicy"] },
       { "id": "i0102", "name": "Chicken Biryani", "veg": false, "price": 280, "tags": ["biryani", "rice", "spicy"] },
       { "id": "i0103", "name": "Mutton Biryani", "veg": false, "price": 340, "tags": ["biryani", "rice", "spicy"] },
-      { "id": "i0104", "name": "Paneer Biryani", "veg": true, "price": 240, "tags": ["biryani", "rice", "paneer"] }
+      { "id": "i0104", "name": "Paneer Biryani", "veg": true, "price": 240, "tags": ["biryani", "rice", "paneer"] },
+      { "id": "i0105", "name": "Keema Biryani", "veg": false, "price": 300, "tags": ["biryani", "rice", "spicy", "mince"] },
+      { "id": "i0106", "name": "Mirchi Ka Salan", "veg": true, "price": 150, "tags": ["curry", "spicy", "hyderabadi", "side"] }
     ]
   },
   {
@@ -26,7 +28,11 @@
       { "id": "i0201", "name": "Veg Dum Biryani", "veg": true, "price": 200, "tags": ["biryani", "rice", "spicy"] },
       { "id": "i0202", "name": "Egg Biryani", "veg": false, "price": 230, "tags": ["biryani", "rice", "egg"] },
       { "id": "i0203", "name": "Butter Chicken", "veg": false, "price": 300, "tags": ["curry", "creamy"] },
-      { "id": "i0204", "name": "Dal Makhani", "veg": true, "price": 190, "tags": ["curry", "creamy", "lentil"] }
+      { "id": "i0204", "name": "Dal Makhani", "veg": true, "price": 190, "tags": ["curry", "creamy", "lentil"] },
+      { "id": "i0205", "name": "Kadai Paneer", "veg": true, "price": 260, "tags": ["curry", "paneer", "spicy"] },
+      { "id": "i0206", "name": "Tandoori Naan", "veg": true, "price": 40, "tags": ["bread", "tandoor"] },
+      { "id": "i0207", "name": "Chicken Seekh Kebab", "veg": false, "price": 260, "tags": ["starter", "appetizer", "grilled", "kebab"] },
+      { "id": "i0208", "name": "Masala Chai", "veg": true, "price": 30, "tags": ["drink", "hot", "tea"] }
     ]
   },
   {
@@ -40,7 +46,9 @@
     "items": [
       { "id": "i0301", "name": "Veg Biryani", "veg": true, "price": 260, "tags": ["biryani", "rice", "spicy", "premium"] },
       { "id": "i0302", "name": "Hyderabadi Chicken Biryani", "veg": false, "price": 320, "tags": ["biryani", "rice", "spicy", "premium"] },
-      { "id": "i0303", "name": "Shahi Paneer", "veg": true, "price": 280, "tags": ["curry", "creamy", "paneer"] }
+      { "id": "i0303", "name": "Shahi Paneer", "veg": true, "price": 280, "tags": ["curry", "creamy", "paneer"] },
+      { "id": "i0304", "name": "Haleem", "veg": false, "price": 290, "tags": ["hyderabadi", "mince", "spicy", "stew"] },
+      { "id": "i0305", "name": "Sheer Khurma", "veg": true, "price": 120, "tags": ["dessert", "mughlai", "sweet"] }
     ]
   },
   {
@@ -55,7 +63,12 @@
       { "id": "i0401", "name": "Masala Dosa", "veg": true, "price": 120, "tags": ["dosa", "breakfast", "light"] },
       { "id": "i0402", "name": "Veg Biryani", "veg": true, "price": 180, "tags": ["biryani", "rice", "light"] },
       { "id": "i0403", "name": "Idli Sambar", "veg": true, "price": 90, "tags": ["breakfast", "light", "steamed"] },
-      { "id": "i0404", "name": "Curd Rice", "veg": true, "price": 110, "tags": ["rice", "light", "cooling"] }
+      { "id": "i0404", "name": "Curd Rice", "veg": true, "price": 110, "tags": ["rice", "light", "cooling"] },
+      { "id": "i0405", "name": "Rava Dosa", "veg": true, "price": 140, "tags": ["dosa", "breakfast", "crispy"] },
+      { "id": "i0406", "name": "Ven Pongal", "veg": true, "price": 110, "tags": ["breakfast", "light", "lentil"] },
+      { "id": "i0407", "name": "Medu Vada", "veg": true, "price": 80, "tags": ["starter", "appetizer", "fried", "south indian"] },
+      { "id": "i0408", "name": "Filter Coffee", "veg": true, "price": 50, "tags": ["drink", "hot", "south indian"] },
+      { "id": "i0409", "name": "Buttermilk", "veg": true, "price": 40, "tags": ["drink", "cooling"] }
     ]
   },
   {
@@ -68,9 +81,11 @@
     "available": true,
     "items": [
       { "id": "i0501", "name": "Chole Bhature", "veg": true, "price": 160, "tags": ["fried", "spicy", "punjabi"] },
-      { "id": "i0502", "name": "Paneer Tikka", "veg": true, "price": 240, "tags": ["grilled", "paneer", "starter"] },
+      { "id": "i0502", "name": "Paneer Tikka", "veg": true, "price": 240, "tags": ["grilled", "paneer", "starter", "appetizer"] },
       { "id": "i0503", "name": "Veg Biryani", "veg": true, "price": 210, "tags": ["biryani", "rice", "spicy"] },
-      { "id": "i0504", "name": "Tandoori Roti", "veg": true, "price": 30, "tags": ["bread", "tandoor"] }
+      { "id": "i0504", "name": "Tandoori Roti", "veg": true, "price": 30, "tags": ["bread", "tandoor"] },
+      { "id": "i0505", "name": "Sarson Ka Saag", "veg": true, "price": 200, "tags": ["curry", "punjabi", "winter"] },
+      { "id": "i0506", "name": "Amritsari Lassi", "veg": true, "price": 80, "tags": ["drink", "punjabi", "sweet", "cooling"] }
     ]
   },
   {
@@ -83,7 +98,7 @@
     "available": true,
     "items": [
       { "id": "i0601", "name": "Veg Biryani", "veg": true, "price": 150, "tags": ["biryani", "rice", "budget"] },
-      { "id": "i0602", "name": "Chicken 65", "veg": false, "price": 190, "tags": ["fried", "spicy", "starter"] }
+      { "id": "i0602", "name": "Chicken 65", "veg": false, "price": 190, "tags": ["fried", "spicy", "starter", "appetizer"] }
     ]
   },
   {
@@ -98,7 +113,7 @@
       { "id": "i0701", "name": "Margherita Pizza", "veg": true, "price": 250, "tags": ["pizza", "cheese", "italian"] },
       { "id": "i0702", "name": "Farmhouse Pizza", "veg": true, "price": 290, "tags": ["pizza", "cheese", "veggie"] },
       { "id": "i0703", "name": "Chicken Pepperoni Pizza", "veg": false, "price": 340, "tags": ["pizza", "cheese", "meat"] },
-      { "id": "i0704", "name": "Garlic Bread", "veg": true, "price": 110, "tags": ["bread", "starter", "cheese"] }
+      { "id": "i0704", "name": "Garlic Bread", "veg": true, "price": 110, "tags": ["bread", "starter", "appetizer", "cheese"] }
     ]
   },
   {
@@ -113,7 +128,9 @@
       { "id": "i0801", "name": "Veg Fried Rice", "veg": true, "price": 170, "tags": ["rice", "chinese", "light"] },
       { "id": "i0802", "name": "Chicken Manchurian", "veg": false, "price": 230, "tags": ["chinese", "spicy", "gravy"] },
       { "id": "i0803", "name": "Veg Hakka Noodles", "veg": true, "price": 160, "tags": ["noodles", "chinese", "light"] },
-      { "id": "i0804", "name": "Chilli Paneer", "veg": true, "price": 220, "tags": ["chinese", "spicy", "paneer"] }
+      { "id": "i0804", "name": "Chilli Paneer", "veg": true, "price": 220, "tags": ["chinese", "spicy", "paneer"] },
+      { "id": "i0805", "name": "Veg Spring Rolls", "veg": true, "price": 150, "tags": ["starter", "appetizer", "chinese", "fried"] },
+      { "id": "i0806", "name": "Chicken Lollipop", "veg": false, "price": 220, "tags": ["starter", "appetizer", "chinese", "spicy"] }
     ]
   },
   {
@@ -141,7 +158,12 @@
     "items": [
       { "id": "i1001", "name": "Chocolate Brownie", "veg": true, "price": 90, "tags": ["dessert", "chocolate"] },
       { "id": "i1002", "name": "Gulab Jamun", "veg": true, "price": 80, "tags": ["dessert", "indian", "sweet"] },
-      { "id": "i1003", "name": "Cheesecake", "veg": true, "price": 150, "tags": ["dessert", "cheese", "sweet"] }
+      { "id": "i1003", "name": "Cheesecake", "veg": true, "price": 150, "tags": ["dessert", "cheese", "sweet"] },
+      { "id": "i1004", "name": "Rasgulla", "veg": true, "price": 90, "tags": ["dessert", "indian", "sweet", "bengali"] },
+      { "id": "i1005", "name": "Jalebi", "veg": true, "price": 80, "tags": ["dessert", "indian", "sweet", "fried"] },
+      { "id": "i1006", "name": "Kaju Katli", "veg": true, "price": 160, "tags": ["dessert", "indian", "sweet"] },
+      { "id": "i1007", "name": "Mango Lassi", "veg": true, "price": 90, "tags": ["drink", "sweet", "cooling"] },
+      { "id": "i1008", "name": "Cold Coffee", "veg": true, "price": 110, "tags": ["drink", "sweet"] }
     ]
   },
   {
@@ -155,7 +177,8 @@
     "items": [
       { "id": "i1101", "name": "Fish Curry Rice", "veg": false, "price": 260, "tags": ["seafood", "rice", "spicy"] },
       { "id": "i1102", "name": "Prawn Biryani", "veg": false, "price": 310, "tags": ["biryani", "seafood", "rice"] },
-      { "id": "i1103", "name": "Veg Biryani", "veg": true, "price": 230, "tags": ["biryani", "rice", "coastal"] }
+      { "id": "i1103", "name": "Veg Biryani", "veg": true, "price": 230, "tags": ["biryani", "rice", "coastal"] },
+      { "id": "i1104", "name": "Fish Fry", "veg": false, "price": 220, "tags": ["starter", "appetizer", "seafood", "fried"] }
     ]
   },
   {
@@ -168,7 +191,55 @@
     "available": true,
     "items": [
       { "id": "i1201", "name": "Veg Biryani", "veg": true, "price": 170, "tags": ["biryani", "rice", "budget"] },
-      { "id": "i1202", "name": "Chicken Tikka", "veg": false, "price": 210, "tags": ["tandoor", "grilled", "spicy"] }
+      { "id": "i1202", "name": "Chicken Tikka", "veg": false, "price": 210, "tags": ["tandoor", "grilled", "spicy", "starter", "appetizer"] },
+      { "id": "i1203", "name": "Tandoori Mushroom", "veg": true, "price": 190, "tags": ["tandoor", "starter", "appetizer"] }
+    ]
+  },
+  {
+    "id": "r13",
+    "name": "Bengal Bhoj",
+    "cuisines": ["bengali", "seafood"],
+    "rating": 4.4,
+    "etaMinutes": 33,
+    "priceLevel": 2,
+    "available": true,
+    "items": [
+      { "id": "i1301", "name": "Bhapa Ilish", "veg": false, "price": 340, "tags": ["seafood", "bengali", "steamed"] },
+      { "id": "i1302", "name": "Kosha Mangsho", "veg": false, "price": 300, "tags": ["bengali", "spicy", "mutton"] },
+      { "id": "i1303", "name": "Chingri Malai Curry", "veg": false, "price": 320, "tags": ["seafood", "bengali", "creamy", "prawn"] },
+      { "id": "i1304", "name": "Mishti Doi", "veg": true, "price": 70, "tags": ["dessert", "bengali", "sweet"] },
+      { "id": "i1305", "name": "Fish Cutlet", "veg": false, "price": 180, "tags": ["starter", "appetizer", "bengali", "fried"] }
+    ]
+  },
+  {
+    "id": "r14",
+    "name": "Momo Point",
+    "cuisines": ["nepali", "tibetan", "street food"],
+    "rating": 4.2,
+    "etaMinutes": 20,
+    "priceLevel": 1,
+    "available": true,
+    "items": [
+      { "id": "i1401", "name": "Veg Momos", "veg": true, "price": 110, "tags": ["momos", "steamed", "nepali", "snack"] },
+      { "id": "i1402", "name": "Chicken Momos", "veg": false, "price": 140, "tags": ["momos", "steamed", "nepali", "snack"] },
+      { "id": "i1403", "name": "Thukpa", "veg": false, "price": 170, "tags": ["soup", "noodles", "tibetan", "warm"] },
+      { "id": "i1404", "name": "Veg Chowmein", "veg": true, "price": 130, "tags": ["noodles", "street food", "light"] }
+    ]
+  },
+  {
+    "id": "r15",
+    "name": "Thali Junction",
+    "cuisines": ["gujarati", "rajasthani", "vegetarian"],
+    "rating": 4.6,
+    "etaMinutes": 35,
+    "priceLevel": 2,
+    "available": true,
+    "items": [
+      { "id": "i1501", "name": "Gujarati Thali", "veg": true, "price": 260, "tags": ["thali", "gujarati", "combo"] },
+      { "id": "i1502", "name": "Dal Baati Churma", "veg": true, "price": 220, "tags": ["rajasthani", "combo", "sweet"] },
+      { "id": "i1503", "name": "Khaman Dhokla", "veg": true, "price": 100, "tags": ["gujarati", "steamed", "snack", "light"] },
+      { "id": "i1504", "name": "Gatte Ki Sabzi", "veg": true, "price": 190, "tags": ["rajasthani", "curry", "lentil"] },
+      { "id": "i1505", "name": "Nimbu Pani", "veg": true, "price": 40, "tags": ["drink", "cooling"] }
     ]
   }
 ]

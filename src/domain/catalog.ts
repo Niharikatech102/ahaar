@@ -25,11 +25,24 @@ export function getItemById(restaurantId: string, itemId: string): MenuItem | un
   return getRestaurantById(restaurantId)?.items.find((i) => i.id === itemId);
 }
 
-function tokenize(text: string): string[] {
+// Words too short or too generic to carry search meaning - without this, a
+// query like "I want something sweet" lets the token "i" fuzzy-match almost
+// any dish (e.g. "b[i]ryani") via the substring check in matchScore, drowning
+// out the one token ("sweet") that's actually meaningful.
+const STOPWORDS = new Set([
+  'i', 'a', 'an', 'the', 'to', 'for', 'of', 'in', 'on', 'at', 'is', 'im', 'me', 'my',
+  'some', 'something', 'anything', 'want', 'wanna', 'would', 'like', 'please', 'need',
+  'looking', 'craving', 'get', 'order', 'give', 'have', 'has', 'had', 'with', 'and',
+  'or', 'not', 'too', 'very', 'bit', 'maybe', 'just', 'that', 'this', 'can', 'could',
+  'you', 'your', 'it', 'be', 'do',
+]);
+
+/** Exported so recommender.ts reuses the exact same tokenization instead of duplicating it. */
+export function tokenize(text: string): string[] {
   return text
     .toLowerCase()
     .split(/[^a-z0-9]+/)
-    .filter(Boolean);
+    .filter((word) => word.length >= 2 && !STOPWORDS.has(word));
 }
 
 /**

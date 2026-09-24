@@ -150,6 +150,20 @@ describe('invalid input handling', () => {
     expect(result.session.shownRecommendations[0]!.entry.item.name).not.toBe('Veg Biryani');
   });
 
+  it('regression: retyping a filler-word search mid-selection returns genuinely relevant dishes', () => {
+    // This is the exact real-world shape of the bug: a user sees
+    // recommendations, doesn't type 1/2/3, and just types a new craving
+    // instead - very normal usage, and previously let stopword-polluted
+    // matching surface history-biased noise instead of real matches.
+    let session = freshSession(PHONE, NOW_0);
+    session = step(session, 'Veg Biryani', NOW_0).session;
+    const result = step(session, 'i want something sweet', NOW_0);
+    expect(result.session.state).toBe('AWAITING_SELECTION');
+    for (const rec of result.session.shownRecommendations) {
+      expect(rec.entry.item.tags).toContain('sweet');
+    }
+  });
+
   it('an invalid quantity re-prompts and keeps state', () => {
     let session = freshSession(PHONE, NOW_0);
     session = step(session, 'Veg Biryani', NOW_0).session;

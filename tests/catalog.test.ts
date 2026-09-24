@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getAllRestaurants, matchScore, searchCatalog } from '../src/domain/catalog.js';
+import { getAllRestaurants, matchScore, searchCatalog, tokenize } from '../src/domain/catalog.js';
 
 describe('catalog data', () => {
   it('loads all restaurants with valid ratings and at least one item each', () => {
@@ -50,5 +50,24 @@ describe('searchCatalog', () => {
     const vegBiryani = biryaniHouse.items.find((i) => i.id === 'i0101')!;
     const score = matchScore({ restaurant: biryaniHouse, item: vegBiryani }, ['veg', 'biryani']);
     expect(score).toBe(1);
+  });
+
+  describe('tokenize', () => {
+    it('drops filler words that would otherwise pollute matching', () => {
+      expect(tokenize('i want something sweet')).toEqual(['sweet']);
+      expect(tokenize('Veg Biryani')).toEqual(['veg', 'biryani']);
+    });
+  });
+
+  it('regression: a filler-word query only returns dishes actually matching the meaningful token', () => {
+    // Before the tokenize() stopword fix, the token "i" fuzzy-matched any
+    // dish containing that letter (e.g. "b[i]ryani", "prem[i]um") via the
+    // substring check in matchScore, so this query returned biryanis and
+    // pizza alongside real desserts.
+    const results = searchCatalog('i want something sweet');
+    expect(results.length).toBeGreaterThan(0);
+    for (const e of results) {
+      expect(e.item.tags).toContain('sweet');
+    }
   });
 });

@@ -1,6 +1,6 @@
 import { getProfileOrGuest } from '../domain/users.js';
 import { handleMessage } from './stateMachine.js';
-import { parseGlobalCommand } from './intent.js';
+import { parseGlobalCommand, parseSelection } from './intent.js';
 import { parseQueryWithLLM } from './llmIntent.js';
 import type { SessionStore } from './session.js';
 
@@ -26,9 +26,18 @@ export async function processMessage(
   const session = store.get(phone, now);
   const profile = getProfileOrGuest(phone);
 
-  // Only worth calling the LLM for a fresh free-text search - global
-  // commands and every other state are handled deterministically already.
-  const isFreshSearch = session.state === 'IDLE' && text.trim() !== '' && parseGlobalCommand(text) === null;
+  // Only worth calling the LLM for a fresh free-text search. That's either
+  // a genuinely new search (state IDLE), or a user retyping a dish instead
+  // of picking 1/2/3 while looking at recommendations - stateMachine.ts's
+  // handleAwaitingSelection() falls back to treating that as a new search
+  // too, so this condition has to mirror it exactly or the LLM gets skipped
+  // for a case that's actually a fresh search by the time it reaches there.
+  const isRetypedSearchDuringSelection =
+    session.state === 'AWAITING_SELECTION' && parseSelection(text) === null;
+  const isFreshSearch =
+    text.trim() !== '' &&
+    parseGlobalCommand(text) === null &&
+    (session.state === 'IDLE' || isRetypedSearchDuringSelection);
   const parsedQueryOverride = isFreshSearch ? (await parseQueryWithLLM(text)) ?? undefined : undefined;
 
   const { session: nextSession, replies } = handleMessage(session, text, {

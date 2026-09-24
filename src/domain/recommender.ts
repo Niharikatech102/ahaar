@@ -1,4 +1,4 @@
-import { matchScore, searchCatalog } from './catalog.js';
+import { matchScore, searchCatalog, tokenize } from './catalog.js';
 import type { CatalogEntry, PastOrder, Recommendation } from './types.js';
 
 const WEIGHTS = {
@@ -134,7 +134,7 @@ export function recommend(
   });
 
   const scored = candidates.map((entry) => {
-    const qScore = matchScore(entry, query.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+    const qScore = matchScore(entry, tokenize(query));
     const hist = historyAffinity(entry, history);
     const rating = normalizeRating(entry.restaurant.rating);
     const eta = normalizeEta(entry.restaurant.etaMinutes);

@@ -66,4 +66,16 @@ describe('recommend', () => {
     expect(results.length).toBeGreaterThan(0);
     expect(results.length).toBeLessThanOrEqual(3);
   });
+
+  it('regression: a filler-word query only returns genuinely relevant dishes, not history-biased noise', () => {
+    // Previously "i" (from "I want") fuzzy-matched almost any dish containing
+    // the letter i (e.g. "b[i]ryani"), so a user's past-ordered items could
+    // outrank real dessert matches for a query like this.
+    const results = recommend('i want something sweet', aryanHistory);
+    for (const r of results) {
+      expect(r.entry.item.tags).toContain('sweet');
+    }
+    expect(results.some((r) => r.entry.item.name === 'Margherita Pizza')).toBe(false);
+    expect(results.some((r) => r.entry.item.name === 'Paneer Biryani')).toBe(false);
+  });
 });
