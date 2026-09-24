@@ -67,20 +67,26 @@ export function evaluatePromo(promo: Promo, order: OrderContext): PromoEvalResul
   return { eligible: true, discount: Math.round(discount) };
 }
 
-/** Evaluates every promo against the order and returns the one that saves the most money, or null if none apply. */
+/** Every promo the order is currently eligible for, largest discount first. */
+export function applicablePromos(
+  order: OrderContext,
+  usageByCode: Record<string, number> = {},
+): { promo: Promo; result: PromoEvalResult }[] {
+  const eligible: { promo: Promo; result: PromoEvalResult }[] = [];
+
+  for (const promo of promos) {
+    const result = evaluatePromo(promo, { ...order, timesUsedByUser: usageByCode[promo.code] ?? 0 });
+    if (result.eligible) eligible.push({ promo, result });
+  }
+
+  eligible.sort((a, b) => b.result.discount - a.result.discount);
+  return eligible;
+}
+
+/** The single promo that saves the most money, or null if none apply. */
 export function bestApplicablePromo(
   order: OrderContext,
   usageByCode: Record<string, number> = {},
 ): { promo: Promo; result: PromoEvalResult } | null {
-  let best: { promo: Promo; result: PromoEvalResult } | null = null;
-
-  for (const promo of promos) {
-    const result = evaluatePromo(promo, { ...order, timesUsedByUser: usageByCode[promo.code] ?? 0 });
-    if (!result.eligible) continue;
-    if (!best || result.discount > best.result.discount) {
-      best = { promo, result };
-    }
-  }
-
-  return best;
+  return applicablePromos(order, usageByCode)[0] ?? null;
 }

@@ -88,10 +88,10 @@ export function promoPromptMessage(
   if (suggestion) {
     return [
       `You're eligible for *${suggestion.promo.code}* — ${suggestion.promo.description} (saves ₹${suggestion.discount}).`,
-      'Reply *APPLY* to use it, type a different code, or *SKIP*.',
+      'Reply *APPLY* to use it, type a different code, reply *CODES* to see all offers, or *SKIP*.',
     ].join('\n');
   }
-  return 'Have a promo code? Type it now, or reply *SKIP*.';
+  return 'Have a promo code? Type it now, reply *CODES* to see all offers, or reply *SKIP*.';
 }
 
 export function promoAppliedMessage(code: string, discount: number): string {
@@ -107,6 +107,23 @@ export function promoRejectedMessage(reason: string): string {
 
 export function noPromoInvalidCodeMessage(code: string): string {
   return [`"${code}" isn't a code I recognise.`, 'Try a different code, or reply *SKIP*.'].join('\n');
+}
+
+export function allPromosMessage(promos: { promo: Promo; discount: number }[]): string {
+  if (promos.length === 0) {
+    return [
+      'No promo codes are eligible on this order right now.',
+      'Reply *SKIP* to continue without one.',
+    ].join('\n');
+  }
+  const lines = promos.map((p) => `*${p.promo.code}* — ${p.promo.description} (saves ₹${p.discount})`);
+  return [
+    '*Offers available on this order:*',
+    '',
+    lines.join('\n'),
+    '',
+    'Type a code to apply it, or reply *SKIP*.',
+  ].join('\n');
 }
 
 function billLines(cart: CartItem, bill: Bill): string[] {

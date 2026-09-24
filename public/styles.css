@@ -396,6 +396,53 @@ body {
   color: #075e54;
 }
 
+.bubble-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--divider);
+}
+
+.bubble-action-btn {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--divider);
+  background: var(--composer-bg);
+  color: var(--header-bg);
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background 0.12s ease, opacity 0.12s ease;
+}
+
+.bubble-action-btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.bubble-action-btn.primary {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+  color: #ffffff;
+}
+
+.bubble-action-btn.primary:hover:not(:disabled) {
+  background: #0f6d61;
+}
+
+.bubble-action-btn:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: 1px;
+}
+
+.bubble-actions.resolved .bubble-action-btn {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .composer {
   display: flex;
   gap: 10px;

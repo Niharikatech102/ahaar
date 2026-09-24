@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bestApplicablePromo, evaluatePromo, getPromoByCode } from '../src/domain/promos.js';
+import { applicablePromos, bestApplicablePromo, evaluatePromo, getPromoByCode } from '../src/domain/promos.js';
 
 describe('evaluatePromo', () => {
   it('rejects an expired code', () => {
@@ -143,5 +143,44 @@ describe('bestApplicablePromo', () => {
       timesUsedByUser: 0,
     });
     expect(best).toBeNull();
+  });
+});
+
+describe('applicablePromos', () => {
+  it('returns every eligible code sorted by discount, largest first', () => {
+    const all = applicablePromos({
+      subtotal: 600,
+      restaurantId: 'r01',
+      cuisines: ['biryani'],
+      isFirstOrder: false,
+      timesUsedByUser: 0,
+    });
+    expect(all.map((p) => p.promo.code)).toEqual(['MEGA100', 'BIRYANI20', 'FLAT50']);
+    expect(all[0]!.result.discount).toBe(100);
+  });
+
+  it('excludes expired and ineligible codes rather than listing every promo in the system', () => {
+    const all = applicablePromos({
+      subtotal: 600,
+      restaurantId: 'r01',
+      cuisines: ['biryani'],
+      isFirstOrder: false,
+      timesUsedByUser: 0,
+    });
+    const codes = all.map((p) => p.promo.code);
+    expect(codes).not.toContain('OLD25'); // expired
+    expect(codes).not.toContain('WELCOME50'); // first-order-only, not a first order here
+    expect(codes).not.toContain('SWEET10'); // scoped to a different restaurant
+  });
+
+  it('returns an empty array, not null, when nothing is eligible', () => {
+    const all = applicablePromos({
+      subtotal: 50,
+      restaurantId: 'r09',
+      cuisines: ['fast food'],
+      isFirstOrder: false,
+      timesUsedByUser: 0,
+    });
+    expect(all).toEqual([]);
   });
 });

@@ -1,5 +1,5 @@
 import { recommend } from '../domain/recommender.js';
-import { bestApplicablePromo, evaluatePromo, getPromoByCode } from '../domain/promos.js';
+import { applicablePromos, bestApplicablePromo, evaluatePromo, getPromoByCode } from '../domain/promos.js';
 import { computeBill, generateOrderId, type CartItem, type Order } from '../domain/order.js';
 import { statusAt } from '../domain/delivery.js';
 import type { UserProfile } from '../domain/types.js';
@@ -23,13 +23,58 @@ export interface Ctx {
   parsedQueryOverride?: ParsedQuery;
 }
 
+export interface QuickReply {
+  label: string;
+  /** The exact text to send when tapped - matches what this state machine already accepts as typed input. */
+  value: string;
+}
+
 export interface StepResult {
   session: Session;
   replies: string[];
+  /**
+   * Tappable options for whichever reply is last in `replies`, when that
+   * reply is waiting on a fixed-choice answer. Built by the same handler
+   * that crafts the prompt text, so the buttons can never drift out of sync
+   * with what the text actually offers.
+   */
+  quickReplies?: QuickReply[];
 }
 
 function defaultAddressLine(profile: UserProfile): string | null {
   return profile.addresses.find((a) => a.isDefault)?.line ?? profile.addresses[0]?.line ?? null;
+}
+
+function confirmQuickReplies(): QuickReply[] {
+  return [
+    { label: 'Yes, place order', value: 'CONFIRM' },
+    { label: 'No, cancel', value: 'CANCEL' },
+  ];
+}
+
+/**
+ * Sentinel `value` meaning "focus the composer, don't send anything" -
+ * for a button offering free-text entry (a new delivery address) rather
+ * than a fixed reply. simulator.js's frontend recognizes this exact string
+ * and special-cases it instead of sending it as a message; twilio.ts never
+ * sees it, since it ignores quickReplies entirely.
+ */
+export const FOCUS_INPUT_ACTION = '__focus_input__';
+
+function addressQuickReplies(defaultLine: string | null): QuickReply[] | undefined {
+  if (!defaultLine) return undefined;
+  return [
+    { label: 'Yes, deliver here', value: 'YES' },
+    { label: 'Use a different address', value: FOCUS_INPUT_ACTION },
+  ];
+}
+
+function promoQuickReplies(suggestion: { promo: { code: string } } | null): QuickReply[] {
+  const seeAll: QuickReply = { label: 'See all offers', value: 'CODES' };
+  const skip: QuickReply = { label: 'Skip', value: 'SKIP' };
+  return suggestion
+    ? [{ label: `Apply ${suggestion.promo.code}`, value: 'APPLY' }, seeAll, skip]
+    : [seeAll, skip];
 }
 
 function handleIdle(session: Session, text: string, ctx: Ctx): StepResult {
@@ -94,7 +139,12 @@ function handleAwaitingQuantity(session: Session, text: string, ctx: Ctx): StepR
     quantity: qty,
     updatedAt: ctx.now,
   };
-  return { session: next, replies: [msg.addressPromptMessage(defaultAddressLine(ctx.profile))] };
+  const defaultLine = defaultAddressLine(ctx.profile);
+  return {
+    session: next,
+    replies: [msg.addressPromptMessage(defaultLine)],
+    quickReplies: addressQuickReplies(defaultLine),
+  };
 }
 
 function buildCart(session: Session): CartItem | null {
@@ -114,7 +164,11 @@ function handleAwaitingAddress(session: Session, text: string, ctx: Ctx): StepRe
   const address = isWord(text, 'YES') && defaultLine ? defaultLine : text.trim();
 
   if (!address) {
-    return { session, replies: [msg.addressPromptMessage(defaultLine)] };
+    return {
+      session,
+      replies: [msg.addressPromptMessage(defaultLine)],
+      quickReplies: addressQuickReplies(defaultLine),
+    };
   }
 
   const cart = buildCart(session);
@@ -139,6 +193,7 @@ function handleAwaitingAddress(session: Session, text: string, ctx: Ctx): StepRe
   return {
     session: next,
     replies: [msg.promoPromptMessage(suggestion ? { promo: suggestion.promo, discount: suggestion.result.discount } : null)],
+    quickReplies: promoQuickReplies(suggestion),
   };
 }
 
@@ -156,7 +211,11 @@ function moveToConfirm(session: Session, ctx: Ctx, code: string | null, discount
     appliedDiscount: discount,
     updatedAt: ctx.now,
   };
-  return { session: next, replies: [msg.billMessage(cart, bill, session.address)] };
+  return {
+    session: next,
+    replies: [msg.billMessage(cart, bill, session.address)],
+    quickReplies: confirmQuickReplies(),
+  };
 }
 
 function handleAwaitingPromo(session: Session, text: string, ctx: Ctx): StepResult {
@@ -178,39 +237,65 @@ function handleAwaitingPromo(session: Session, text: string, ctx: Ctx): StepResu
     timesUsedByUser: 0,
   };
 
+  if (isWord(trimmed, 'CODES')) {
+    const all = applicablePromos(orderContext);
+    return {
+      session,
+      replies: [msg.allPromosMessage(all.map((p) => ({ promo: p.promo, discount: p.result.discount })))],
+      quickReplies: promoQuickReplies(all[0] ?? null),
+    };
+  }
+
   if (isWord(trimmed, 'APPLY')) {
     const suggestion = bestApplicablePromo(orderContext);
     if (!suggestion) {
-      return { session, replies: [msg.promoPromptMessage(null)] };
+      return { session, replies: [msg.promoPromptMessage(null)], quickReplies: promoQuickReplies(null) };
     }
     const replies = [msg.promoAppliedMessage(suggestion.promo.code, suggestion.result.discount)];
-    const { session: nextSession, replies: billReplies } = moveToConfirm(
+    const { session: nextSession, replies: billReplies, quickReplies } = moveToConfirm(
       session,
       ctx,
       suggestion.promo.code,
       suggestion.result.discount,
     );
-    return { session: nextSession, replies: [...replies, ...billReplies] };
+    return { session: nextSession, replies: [...replies, ...billReplies], quickReplies };
   }
 
   const promo = getPromoByCode(trimmed);
   if (!promo) {
-    return { session, replies: [msg.noPromoInvalidCodeMessage(trimmed)] };
+    return {
+      session,
+      replies: [msg.noPromoInvalidCodeMessage(trimmed)],
+      quickReplies: promoQuickReplies(null),
+    };
   }
 
   const result = evaluatePromo(promo, orderContext);
   if (!result.eligible) {
-    return { session, replies: [msg.promoRejectedMessage(result.reason ?? 'not eligible')] };
+    return {
+      session,
+      replies: [msg.promoRejectedMessage(result.reason ?? 'not eligible')],
+      quickReplies: promoQuickReplies(null),
+    };
   }
 
   const replies = [msg.promoAppliedMessage(promo.code, result.discount)];
-  const { session: nextSession, replies: billReplies } = moveToConfirm(session, ctx, promo.code, result.discount);
-  return { session: nextSession, replies: [...replies, ...billReplies] };
+  const { session: nextSession, replies: billReplies, quickReplies } = moveToConfirm(
+    session,
+    ctx,
+    promo.code,
+    result.discount,
+  );
+  return { session: nextSession, replies: [...replies, ...billReplies], quickReplies };
 }
 
 function handleAwaitingConfirm(session: Session, text: string, ctx: Ctx): StepResult {
   if (!isWord(text, 'CONFIRM')) {
-    return { session, replies: [msg.invalidConfirmMessage()] };
+    return {
+      session,
+      replies: [msg.invalidConfirmMessage()],
+      quickReplies: confirmQuickReplies(),
+    };
   }
 
   const cart = buildCart(session);

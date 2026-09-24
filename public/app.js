@@ -14,6 +14,10 @@ const statusLineEl = document.getElementById('statusLine');
 
 const STEP_ORDER = ['CONFIRMED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
 const NEW_CUSTOMER = '__new__';
+// Must match FOCUS_INPUT_ACTION in src/core/stateMachine.ts exactly - a
+// quick reply with this value means "let the user type their own answer",
+// not "send this text as a message" (e.g. entering a new delivery address).
+const FOCUS_INPUT_ACTION = '__focus_input__';
 
 // Deterministic per-phone avatar color, so a contact keeps the same color
 // across reloads without hardcoding a palette entry per demo user. Kept
@@ -36,12 +40,45 @@ function formatText(text) {
     .replace(/\n/g, '<br>');
 }
 
-function appendBubble(text, sender) {
+function appendBubble(text, sender, quickReplies) {
   const bubble = document.createElement('div');
   bubble.className = `bubble ${sender}`;
   bubble.innerHTML = formatText(text);
+
+  if (quickReplies && quickReplies.length > 0) {
+    bubble.appendChild(buildQuickReplies(quickReplies));
+  }
+
   transcriptEl.appendChild(bubble);
   transcriptEl.scrollTop = transcriptEl.scrollHeight;
+}
+
+function buildQuickReplies(quickReplies) {
+  const actions = document.createElement('div');
+  actions.className = 'bubble-actions';
+
+  quickReplies.forEach((qr, i) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = i === 0 ? 'bubble-action-btn primary' : 'bubble-action-btn';
+    btn.textContent = qr.label;
+    btn.addEventListener('click', () => {
+      if (qr.value === FOCUS_INPUT_ACTION) {
+        // Nothing to send yet - just hand control to the composer so the
+        // user can type their own answer (e.g. a new delivery address).
+        textInput.focus();
+        return;
+      }
+      actions.querySelectorAll('button').forEach((b) => {
+        b.disabled = true;
+      });
+      actions.classList.add('resolved');
+      sendMessage(qr.value);
+    });
+    actions.appendChild(btn);
+  });
+
+  return actions;
 }
 
 function randomGuestPhone() {
@@ -155,7 +192,10 @@ async function sendMessage(text) {
     });
     if (!res.ok) throw new Error(`server responded ${res.status}`);
     const data = await res.json();
-    for (const reply of data.replies) appendBubble(reply, 'bot');
+    data.replies.forEach((reply, i) => {
+      const isLast = i === data.replies.length - 1;
+      appendBubble(reply, 'bot', isLast ? data.quickReplies : null);
+    });
 
     if (data.orderId && data.orderId !== state.orderId) {
       state.orderId = data.orderId;

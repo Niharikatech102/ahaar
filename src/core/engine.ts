@@ -1,13 +1,26 @@
 import { getProfileOrGuest } from '../domain/users.js';
-import { handleMessage } from './stateMachine.js';
+import { handleMessage, type QuickReply } from './stateMachine.js';
 import { parseGlobalCommand, parseSelection } from './intent.js';
 import { parseQueryWithLLM } from './llmIntent.js';
 import type { SessionStore } from './session.js';
+
+export type { QuickReply };
 
 export interface EngineResult {
   replies: string[];
   /** The current order's id after this turn, if the user has ever placed one - lets a channel subscribe to live status. */
   orderId: string | null;
+  /**
+   * Tappable options for whichever reply is waiting on a fixed-choice
+   * answer (confirm/cancel an order, confirm an address, apply/skip a
+   * promo), or null otherwise. Built by stateMachine.ts alongside the reply
+   * text itself, so the two can't drift apart. Presentational only -
+   * simulator.ts renders these as buttons; twilio.ts ignores the field
+   * entirely and stays plain text, since real WhatsApp button templates
+   * need Twilio's separate Content API with pre-approved templates, not a
+   * field on this response.
+   */
+  quickReplies: QuickReply[] | null;
 }
 
 /**
@@ -40,11 +53,15 @@ export async function processMessage(
     (session.state === 'IDLE' || isRetypedSearchDuringSelection);
   const parsedQueryOverride = isFreshSearch ? (await parseQueryWithLLM(text)) ?? undefined : undefined;
 
-  const { session: nextSession, replies } = handleMessage(session, text, {
+  const { session: nextSession, replies, quickReplies } = handleMessage(session, text, {
     profile,
     now,
     parsedQueryOverride,
   });
   store.set(nextSession);
-  return { replies, orderId: nextSession.currentOrder?.id ?? null };
+  return {
+    replies,
+    orderId: nextSession.currentOrder?.id ?? null,
+    quickReplies: quickReplies ?? null,
+  };
 }
