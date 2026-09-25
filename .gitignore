@@ -11,3 +11,6 @@ coverage/
 .idea/
 src/data/sessions.json
 src/data/added_users.json
+
+.vercel
+.env*
