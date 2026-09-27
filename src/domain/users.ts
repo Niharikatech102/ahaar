@@ -5,7 +5,7 @@ import { DATA_DIR } from '../config.js';
 import { createLogger } from '../logger.js';
 import { getDb } from '../db/client.js';
 import { users as usersTable } from '../db/schema.js';
-import type { UserProfile } from './types.js';
+import type { PastOrder, UserProfile } from './types.js';
 
 /**
  * Normalizes a raw phone number typed into the "add customer" form into the
@@ -127,6 +127,28 @@ export async function addUser(name: string, phone?: string, addressLine?: string
   addedUsers.push(profile);
   persistAddedUsers();
   return profile;
+}
+
+/**
+ * Appends a freshly-rated order to a customer's history, feeding straight
+ * into the recommender's history-affinity signal for future searches. A
+ * no-op for guests (no profile row exists to attach the rating to).
+ */
+export async function recordOrderRating(phone: string, pastOrder: PastOrder): Promise<void> {
+  const db = getDb();
+  if (db) {
+    const rows = await db.select().from(usersTable).where(eq(usersTable.phone, phone)).limit(1);
+    const existing = rows[0];
+    if (!existing) return;
+    await db
+      .update(usersTable)
+      .set({ orderHistory: [pastOrder, ...existing.orderHistory] })
+      .where(eq(usersTable.phone, phone));
+    return;
+  }
+
+  const target = seededUsers.find((u) => u.phone === phone) ?? addedUsers.find((u) => u.phone === phone);
+  if (target) target.orderHistory = [pastOrder, ...target.orderHistory];
 }
 
 /** Cold-start profile for a phone number we have no history for - no saved address, empty history. */

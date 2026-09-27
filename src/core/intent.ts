@@ -1,6 +1,6 @@
-export type GlobalCommand = 'MENU' | 'HELP' | 'STATUS' | 'CANCEL';
+export type GlobalCommand = 'MENU' | 'HELP' | 'STATUS' | 'CANCEL' | 'REORDER';
 
-const GLOBAL_COMMANDS: GlobalCommand[] = ['MENU', 'HELP', 'STATUS', 'CANCEL'];
+const GLOBAL_COMMANDS: GlobalCommand[] = ['MENU', 'HELP', 'STATUS', 'CANCEL', 'REORDER'];
 
 export function parseGlobalCommand(text: string): GlobalCommand | null {
   const normalized = text.trim().toUpperCase();
@@ -28,6 +28,14 @@ export function parseQuantity(text: string): number | null {
   const n = Number.parseInt(match[1] ?? '', 10);
   if (!Number.isFinite(n) || n < 1 || n > 10) return null;
   return n;
+}
+
+/** Parses a bare 1-5 star rating reply, or null if the text isn't one. */
+export function parseRating(text: string): 1 | 2 | 3 | 4 | 5 | null {
+  const trimmed = text.trim();
+  const match = trimmed.match(/^([1-5])$/);
+  if (!match) return null;
+  return Number.parseInt(match[1] ?? '', 10) as 1 | 2 | 3 | 4 | 5;
 }
 
 export interface ParsedQuery {

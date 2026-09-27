@@ -40,3 +40,33 @@ const STATUS_COPY: Record<OrderStatus, string> = {
 export function statusMessage(status: OrderStatus): string {
   return STATUS_COPY[status];
 }
+
+const PARTNER_NAMES = [
+  'Ravi Kumar', 'Suresh Patel', 'Anjali Singh', 'Vikram Rao',
+  'Priya Nair', 'Arjun Mehta', 'Sneha Gupta', 'Karthik Iyer',
+];
+const VEHICLES = ['bike', 'scooter'];
+
+/** Deterministic pseudo-random in [0, n) seeded by a string - same order id always gets the same partner. */
+function hashToIndex(seed: string, n: number): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return h % n;
+}
+
+export interface DeliveryPartner {
+  name: string;
+  vehicle: string;
+}
+
+/**
+ * Flavor text only, not real dispatch data - assigned once an order is out
+ * for delivery, consistently for the life of that order (same order id
+ * always resolves to the same partner instead of a new name each check).
+ */
+export function deliveryPartnerFor(orderId: string): DeliveryPartner {
+  return {
+    name: PARTNER_NAMES[hashToIndex(orderId, PARTNER_NAMES.length)]!,
+    vehicle: VEHICLES[hashToIndex(`${orderId}-v`, VEHICLES.length)]!,
+  };
+}

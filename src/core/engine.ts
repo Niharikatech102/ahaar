@@ -1,4 +1,4 @@
-import { getProfileOrGuest } from '../domain/users.js';
+import { getProfileOrGuest, recordOrderRating } from '../domain/users.js';
 import { handleMessage, type QuickReply } from './stateMachine.js';
 import { parseGlobalCommand, parseSelection } from './intent.js';
 import { parseQueryWithLLM } from './llmIntent.js';
@@ -53,12 +53,13 @@ export async function processMessage(
     (session.state === 'IDLE' || isRetypedSearchDuringSelection);
   const parsedQueryOverride = isFreshSearch ? (await parseQueryWithLLM(text)) ?? undefined : undefined;
 
-  const { session: nextSession, replies, quickReplies } = handleMessage(session, text, {
+  const { session: nextSession, replies, quickReplies, ratingToRecord } = handleMessage(session, text, {
     profile,
     now,
     parsedQueryOverride,
   });
   await store.set(nextSession);
+  if (ratingToRecord) await recordOrderRating(phone, ratingToRecord);
   return {
     replies,
     orderId: nextSession.currentOrder?.id ?? null,

@@ -19,6 +19,7 @@ const composer = document.getElementById('composer');
 const textInput = document.getElementById('textInput');
 const trackerEl = document.getElementById('orderTracker');
 const statusLineEl = document.getElementById('statusLine');
+const trackerPartnerEl = document.getElementById('trackerPartner');
 
 const STEP_ORDER = ['CONFIRMED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
 // Must match FOCUS_INPUT_ACTION in src/core/stateMachine.ts exactly - a
@@ -270,7 +271,7 @@ async function restoreActiveOrder(phone) {
     if (!data.order || state.phone !== phone) return;
     state.orderId = data.order.id;
     startTracking(data.order.id);
-    updateTrackerUI(data.order.status);
+    updateTrackerUI(data.order.status, data.order.partner);
   } catch (err) {
     console.error(err);
   }
@@ -309,7 +310,7 @@ async function sendMessage(text) {
   }
 }
 
-function updateTrackerUI(status) {
+function updateTrackerUI(status, partner) {
   const currentIndex = STEP_ORDER.indexOf(status);
   document.querySelectorAll('#orderTracker .step').forEach((el) => {
     const stepIndex = STEP_ORDER.indexOf(el.dataset.step);
@@ -317,6 +318,13 @@ function updateTrackerUI(status) {
     el.classList.toggle('current', stepIndex === currentIndex);
   });
   statusLineEl.textContent = status === 'DELIVERED' ? 'delivered' : 'order in progress';
+
+  if (partner) {
+    trackerPartnerEl.textContent = `🛵 ${partner.name} is delivering your order (${partner.vehicle})`;
+    trackerPartnerEl.classList.remove('hidden');
+  } else {
+    trackerPartnerEl.classList.add('hidden');
+  }
 }
 
 function startTracking(orderId) {
@@ -330,7 +338,7 @@ function startTracking(orderId) {
 
   es.onmessage = (event) => {
     const payload = JSON.parse(event.data);
-    updateTrackerUI(payload.status);
+    updateTrackerUI(payload.status, payload.partner);
     if (payload.status === 'DELIVERED') closeStream();
   };
   es.onerror = () => closeStream();

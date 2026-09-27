@@ -1,7 +1,7 @@
 import type { Bill, CartItem, Order, OrderStatus } from '../domain/order.js';
 import type { Promo } from '../domain/types.js';
 import type { Recommendation } from '../domain/types.js';
-import { statusMessage } from '../domain/delivery.js';
+import { deliveryPartnerFor, statusMessage } from '../domain/delivery.js';
 
 const HELP_TEXT = [
   '*How this works*',
@@ -10,6 +10,7 @@ const HELP_TEXT = [
   'Anytime, you can type:',
   '*MENU* — start a fresh search',
   '*STATUS* — check your current order',
+  '*REORDER* — order your last meal again',
   '*CANCEL* — abort what you are doing',
   '*HELP* — show this message',
 ].join('\n');
@@ -171,11 +172,52 @@ export function orderPlacedMessage(order: Order): string {
 }
 
 export function statusUpdateMessage(order: Order, status: OrderStatus): string {
-  return [`*${order.id}*`, statusMessage(status)].join('\n');
+  const lines = [`*${order.id}*`, statusMessage(status)];
+  if (status === 'OUT_FOR_DELIVERY' || status === 'DELIVERED') {
+    const partner = deliveryPartnerFor(order.id);
+    lines.push(`Delivery partner: ${partner.name} (${partner.vehicle})`);
+  }
+  return lines.join('\n');
 }
 
 export function noActiveOrderMessage(): string {
   return "You don't have an active order. Type a dish to place one.";
+}
+
+export function tooLateToCancelMessage(): string {
+  return "This order's already being prepared, so it's too late to cancel. Type *STATUS* to track it.";
+}
+
+export function orderCancelledAfterConfirmMessage(orderId: string): string {
+  return `Order *${orderId}* cancelled — the restaurant hadn't started on it yet. Type a dish whenever you're ready to order again.`;
+}
+
+export function ratingPromptMessage(): string {
+  return 'How was your order? Reply with a number *1* to *5*, or *SKIP*.';
+}
+
+export function ratingThanksMessage(rating: 1 | 2 | 3 | 4 | 5): string {
+  return `Thanks for the ${rating}-star rating! It'll help me recommend better next time.`;
+}
+
+export function ratingSkippedMessage(): string {
+  return 'No problem — type a dish whenever you want to order again.';
+}
+
+export function noPreviousOrderMessage(): string {
+  return "You haven't placed an order with me yet, so there's nothing to reorder. Tell me what you're craving.";
+}
+
+export function cannotReorderMidFlowMessage(): string {
+  return 'Finish or *CANCEL* what you\'re doing first, then type *REORDER* to order your last meal again.';
+}
+
+export function reorderItemUnavailableMessage(): string {
+  return "Sorry, that dish isn't available anymore. Tell me what else you're craving.";
+}
+
+export function reorderMessage(itemName: string, restaurantName: string, lastQuantity: number): string {
+  return `Reordering *${itemName}* from ${restaurantName} (last time: ${lastQuantity}). How many would you like?`;
 }
 
 export function fallbackMessage(): string {

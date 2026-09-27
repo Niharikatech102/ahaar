@@ -28,6 +28,10 @@ export interface Session {
   appliedPromoCode: string | null;
   appliedDiscount: number;
   currentOrder: Order | null;
+  /** Order id awaiting a reply to the post-delivery rating prompt, or null if none is pending. */
+  pendingRatingOrderId: string | null;
+  /** Order id we've already shown the rating prompt for, so it's never asked twice. */
+  ratingHandledForOrderId: string | null;
   updatedAt: number;
 }
 
@@ -42,6 +46,8 @@ export function freshSession(phone: string, now: number): Session {
     appliedPromoCode: null,
     appliedDiscount: 0,
     currentOrder: null,
+    pendingRatingOrderId: null,
+    ratingHandledForOrderId: null,
     updatedAt: now,
   };
 }
@@ -126,6 +132,8 @@ export class SessionStore {
         appliedPromoCode: row.appliedPromoCode,
         appliedDiscount: row.appliedDiscount,
         currentOrder: row.currentOrder,
+        pendingRatingOrderId: row.pendingRatingOrderId,
+        ratingHandledForOrderId: row.ratingHandledForOrderId,
         updatedAt: row.updatedAt.getTime(),
       };
     } catch (err) {
@@ -148,6 +156,8 @@ export class SessionStore {
           appliedPromoCode: session.appliedPromoCode,
           appliedDiscount: session.appliedDiscount,
           currentOrder: session.currentOrder,
+          pendingRatingOrderId: session.pendingRatingOrderId,
+          ratingHandledForOrderId: session.ratingHandledForOrderId,
           updatedAt: new Date(session.updatedAt),
         })
         .onConflictDoUpdate({
@@ -161,6 +171,8 @@ export class SessionStore {
             appliedPromoCode: session.appliedPromoCode,
             appliedDiscount: session.appliedDiscount,
             currentOrder: session.currentOrder,
+            pendingRatingOrderId: session.pendingRatingOrderId,
+            ratingHandledForOrderId: session.ratingHandledForOrderId,
             updatedAt: new Date(session.updatedAt),
           },
         });

@@ -489,6 +489,16 @@ body {
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
+.tracker-partner {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.tracker-partner.hidden {
+  display: none;
+}
+
 .transcript {
   flex: 1;
   overflow-y: auto;

@@ -2,11 +2,13 @@ import { recommend } from '../domain/recommender.js';
 import { applicablePromos, bestApplicablePromo, evaluatePromo, getPromoByCode } from '../domain/promos.js';
 import { computeBill, generateOrderId, type CartItem, type Order } from '../domain/order.js';
 import { statusAt } from '../domain/delivery.js';
-import type { UserProfile } from '../domain/types.js';
+import { getItemById, getRestaurantById } from '../domain/catalog.js';
+import type { PastOrder, UserProfile } from '../domain/types.js';
 import {
   parseGlobalCommand,
   parseQuantity,
   parseQuery,
+  parseRating,
   parseSelection,
   isWord,
   type ParsedQuery,
@@ -39,6 +41,8 @@ export interface StepResult {
    * with what the text actually offers.
    */
   quickReplies?: QuickReply[];
+  /** Set only on the turn a numeric star rating was just submitted - engine.ts persists it. */
+  ratingToRecord?: PastOrder;
 }
 
 function defaultAddressLine(profile: UserProfile): string | null {
@@ -315,8 +319,36 @@ function handleAwaitingConfirm(session: Session, text: string, ctx: Ctx): StepRe
     restaurantEtaMinutes: session.selected.restaurant.etaMinutes,
   };
 
-  const next = resetToIdle({ ...session, currentOrder: order }, ctx.now);
+  const next = resetToIdle(
+    { ...session, currentOrder: order, pendingRatingOrderId: null, ratingHandledForOrderId: null },
+    ctx.now,
+  );
   return { session: next, replies: [msg.orderPlacedMessage(order)] };
+}
+
+function handleReorder(session: Session, ctx: Ctx): StepResult {
+  if (!session.currentOrder) {
+    return { session, replies: [msg.noPreviousOrderMessage()] };
+  }
+  if (session.state !== 'IDLE') {
+    return { session, replies: [msg.cannotReorderMidFlowMessage()] };
+  }
+
+  const { cart } = session.currentOrder;
+  const restaurant = getRestaurantById(cart.restaurantId);
+  const item = restaurant && getItemById(restaurant.id, cart.itemId);
+  if (!restaurant || !item) {
+    return { session, replies: [msg.reorderItemUnavailableMessage()] };
+  }
+
+  const next: Session = {
+    ...session,
+    state: 'AWAITING_QUANTITY',
+    selected: { restaurant, item },
+    quantity: null,
+    updatedAt: ctx.now,
+  };
+  return { session: next, replies: [msg.reorderMessage(item.name, restaurant.name, cart.quantity)] };
 }
 
 const STATE_HANDLERS: Record<Session['state'], (session: Session, text: string, ctx: Ctx) => StepResult> = {
@@ -345,10 +377,23 @@ export function handleMessage(session: Session, text: string, ctx: Ctx): StepRes
   }
 
   if (command === 'CANCEL') {
-    if (session.state === 'IDLE') {
-      return { session, replies: [msg.nothingToCancelMessage()] };
+    if (session.state !== 'IDLE') {
+      return { session: resetToIdle(session, ctx.now), replies: [msg.cancelledMessage()] };
     }
-    return { session: resetToIdle(session, ctx.now), replies: [msg.cancelledMessage()] };
+    if (session.currentOrder) {
+      if (statusAt(session.currentOrder.placedAt, ctx.now) === 'CONFIRMED') {
+        const cancelledId = session.currentOrder.id;
+        const next: Session = {
+          ...session,
+          currentOrder: null,
+          pendingRatingOrderId: null,
+          ratingHandledForOrderId: null,
+        };
+        return { session: next, replies: [msg.orderCancelledAfterConfirmMessage(cancelledId)] };
+      }
+      return { session, replies: [msg.tooLateToCancelMessage()] };
+    }
+    return { session, replies: [msg.nothingToCancelMessage()] };
   }
 
   if (command === 'STATUS') {
@@ -356,7 +401,49 @@ export function handleMessage(session: Session, text: string, ctx: Ctx): StepRes
       return { session, replies: [msg.noActiveOrderMessage()] };
     }
     const status = statusAt(session.currentOrder.placedAt, ctx.now);
-    return { session, replies: [msg.statusUpdateMessage(session.currentOrder, status)] };
+    const statusReply = msg.statusUpdateMessage(session.currentOrder, status);
+
+    if (status === 'DELIVERED' && session.ratingHandledForOrderId !== session.currentOrder.id) {
+      const next: Session = {
+        ...session,
+        pendingRatingOrderId: session.currentOrder.id,
+        ratingHandledForOrderId: session.currentOrder.id,
+      };
+      return { session: next, replies: [statusReply, msg.ratingPromptMessage()] };
+    }
+    return { session, replies: [statusReply] };
+  }
+
+  if (command === 'REORDER') {
+    return handleReorder(session, ctx);
+  }
+
+  // A reply to a still-open rating prompt - a bare 1-5 or SKIP answers it and
+  // stops here; anything else forfeits the one-shot window and falls through
+  // to normal handling below instead of hijacking an unrelated message.
+  if (session.pendingRatingOrderId && session.currentOrder?.id === session.pendingRatingOrderId && session.state === 'IDLE') {
+    const trimmed = text.trim();
+    const cleared: Session = { ...session, pendingRatingOrderId: null };
+
+    if (isWord(trimmed, 'SKIP')) {
+      return { session: cleared, replies: [msg.ratingSkippedMessage()] };
+    }
+
+    const rating = parseRating(trimmed);
+    if (rating !== null) {
+      const order = session.currentOrder;
+      const restaurant = getRestaurantById(order.cart.restaurantId);
+      const pastOrder: PastOrder = {
+        restaurantId: order.cart.restaurantId,
+        itemId: order.cart.itemId,
+        cuisine: restaurant?.cuisines[0] ?? '',
+        daysAgo: 0,
+        rating,
+      };
+      return { session: cleared, replies: [msg.ratingThanksMessage(rating)], ratingToRecord: pastOrder };
+    }
+
+    return STATE_HANDLERS[cleared.state](cleared, text, ctx);
   }
 
   return STATE_HANDLERS[session.state](session, text, ctx);

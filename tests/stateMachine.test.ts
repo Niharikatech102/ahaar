@@ -218,3 +218,114 @@ describe('cold-start user with no saved address and no history', () => {
     expect(session.currentOrder?.id).toBe('ORD-GUEST-1');
   });
 });
+
+/** Runs a full search -> select -> quantity -> address -> skip promo -> confirm flow, returning the resulting session. */
+function placeOrder(now: number): Session {
+  let session = freshSession(PHONE, now);
+  session = step(session, 'Veg Biryani', now).session;
+  session = step(session, '1', now).session;
+  session = step(session, '1', now).session;
+  session = step(session, 'YES', now).session;
+  session = step(session, 'SKIP', now).session;
+  return step(session, 'CONFIRM', now).session;
+}
+
+describe('REORDER', () => {
+  it('says there is nothing to reorder before any order has ever been placed', () => {
+    const session = freshSession(PHONE, NOW_0);
+    const result = step(session, 'REORDER', NOW_0);
+    expect(result.replies[0]).toMatch(/haven't placed an order/i);
+  });
+
+  it('refuses to reorder mid-flow, telling the user to cancel first', () => {
+    let session = placeOrder(NOW_0);
+    session = step(session, 'Paneer Tikka', NOW_0 + 1000).session; // starts a fresh, unrelated search
+    expect(session.state).toBe('AWAITING_SELECTION');
+
+    const result = step(session, 'REORDER', NOW_0 + 1000);
+    expect(result.replies[0]).toMatch(/cancel/i);
+    expect(result.session.state).toBe('AWAITING_SELECTION');
+  });
+
+  it('re-selects the same dish and jumps straight to the quantity prompt', () => {
+    const placed = placeOrder(NOW_0);
+    const lastItemName = placed.currentOrder!.cart.itemName;
+
+    const result = step(placed, 'REORDER', NOW_0 + 1000);
+    expect(result.session.state).toBe('AWAITING_QUANTITY');
+    expect(result.session.selected?.item.name).toBe(lastItemName);
+    expect(result.replies[0]).toContain(lastItemName);
+
+    // and the rest of the flow works exactly as normal from here
+    const qtyResult = step(result.session, '2', NOW_0 + 2000);
+    expect(qtyResult.session.state).toBe('AWAITING_ADDRESS');
+    expect(qtyResult.session.quantity).toBe(2);
+  });
+});
+
+describe('CANCEL after CONFIRM', () => {
+  it('cancels the just-placed order while it is still only CONFIRMED', () => {
+    const placed = placeOrder(NOW_0);
+    const orderId = placed.currentOrder!.id;
+
+    const result = step(placed, 'CANCEL', NOW_0 + 1000); // 1s later, well inside the CONFIRMED window
+    expect(result.session.currentOrder).toBeNull();
+    expect(result.replies[0]).toContain(orderId);
+
+    // and there is genuinely nothing left to cancel afterward
+    const again = step(result.session, 'CANCEL', NOW_0 + 2000);
+    expect(again.replies[0]).toMatch(/not in the middle/i);
+  });
+
+  it('refuses to cancel once the kitchen has started (past the CONFIRMED stage)', () => {
+    const placed = placeOrder(NOW_0);
+    const orderId = placed.currentOrder!.id;
+
+    const result = step(placed, 'CANCEL', NOW_0 + 20_000); // past the 15s CONFIRMED window
+    expect(result.session.currentOrder?.id).toBe(orderId);
+    expect(result.replies[0]).toMatch(/too late/i);
+  });
+});
+
+describe('post-delivery rating', () => {
+  it('prompts for a rating once STATUS reveals DELIVERED, and only once', () => {
+    const placed = placeOrder(NOW_0);
+
+    const delivered = step(placed, 'STATUS', NOW_0 + 91_000);
+    expect(delivered.replies.join('\n')).toMatch(/how was your order/i);
+    expect(delivered.session.pendingRatingOrderId).toBe(placed.currentOrder!.id);
+
+    // asking again does not re-prompt
+    const again = step(delivered.session, 'STATUS', NOW_0 + 92_000);
+    expect(again.replies.join('\n')).not.toMatch(/how was your order/i);
+  });
+
+  it('records a numeric reply as the rating and stops prompting', () => {
+    const placed = placeOrder(NOW_0);
+    const delivered = step(placed, 'STATUS', NOW_0 + 91_000).session;
+
+    const rated = step(delivered, '5', NOW_0 + 92_000);
+    expect(rated.session.pendingRatingOrderId).toBeNull();
+    expect(rated.replies[0]).toMatch(/5-star/i);
+    expect(rated.ratingToRecord).toMatchObject({
+      restaurantId: placed.currentOrder!.cart.restaurantId,
+      itemId: placed.currentOrder!.cart.itemId,
+      rating: 5,
+    });
+  });
+
+  it('SKIP dismisses the prompt without recording anything', () => {
+    const placed = placeOrder(NOW_0);
+    const delivered = step(placed, 'STATUS', NOW_0 + 91_000).session;
+
+    const skipped = step(delivered, 'SKIP', NOW_0 + 92_000);
+    expect(skipped.session.pendingRatingOrderId).toBeNull();
+    expect(skipped.ratingToRecord).toBeUndefined();
+  });
+
+  it('mentions the delivery partner once the order is out for delivery', () => {
+    const placed = placeOrder(NOW_0);
+    const result = step(placed, 'STATUS', NOW_0 + 50_000); // past the 45s OUT_FOR_DELIVERY mark
+    expect(result.replies[0]).toMatch(/delivery partner/i);
+  });
+});

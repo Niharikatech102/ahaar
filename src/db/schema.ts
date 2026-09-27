@@ -45,5 +45,7 @@ export const sessions = pgTable('sessions', {
   appliedPromoCode: text('applied_promo_code'),
   appliedDiscount: real('applied_discount').notNull().default(0),
   currentOrder: jsonb('current_order').$type<Order | null>(),
+  pendingRatingOrderId: text('pending_rating_order_id'),
+  ratingHandledForOrderId: text('rating_handled_for_order_id'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

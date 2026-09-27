@@ -2,11 +2,16 @@ import { Router, type Request, type Response } from 'express';
 import { processMessage } from '../core/engine.js';
 import type { SessionStore } from '../core/session.js';
 import { addUser, getAllUsers, isPhoneTaken, isPlausiblePhone, normalizePhone } from '../domain/users.js';
-import { statusAt } from '../domain/delivery.js';
+import { deliveryPartnerFor, statusAt } from '../domain/delivery.js';
 import { createLogger } from '../logger.js';
 
 const log = createLogger('simulator');
 const STREAM_INTERVAL_MS = 2000;
+
+/** Partner is only meaningful once the order has left the restaurant. */
+function partnerFor(orderId: string, status: ReturnType<typeof statusAt>) {
+  return status === 'OUT_FOR_DELIVERY' || status === 'DELIVERED' ? deliveryPartnerFor(orderId) : null;
+}
 
 /**
  * Zero-credential channel for the browser demo UI. A message is a plain
@@ -64,7 +69,7 @@ export function createSimulatorRouter(store: SessionStore): Router {
     }
 
     const status = statusAt(session.currentOrder.placedAt, Date.now());
-    res.json({ order: { id: session.currentOrder.id, status } });
+    res.json({ order: { id: session.currentOrder.id, status, partner: partnerFor(session.currentOrder.id, status) } });
   });
 
   router.post('/message', async (req: Request, res: Response) => {
@@ -106,7 +111,7 @@ export function createSimulatorRouter(store: SessionStore): Router {
 
     const sendUpdate = () => {
       const status = statusAt(order.placedAt, Date.now());
-      res.write(`data: ${JSON.stringify({ status })}\n\n`);
+      res.write(`data: ${JSON.stringify({ status, partner: partnerFor(order.id, status) })}\n\n`);
       if (status === 'DELIVERED') {
         clearInterval(timer);
         res.end();
