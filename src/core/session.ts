@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { eq } from 'drizzle-orm';
 import { DATA_DIR } from '../config.js';
 import { createLogger } from '../logger.js';
+import { getDb, type Db } from '../db/client.js';
+import { sessions as sessionsTable } from '../db/schema.js';
 import type { Order } from '../domain/order.js';
 import type { CatalogEntry, Recommendation } from '../domain/types.js';
 
@@ -64,32 +67,106 @@ export interface SessionStoreOptions {
 }
 
 /**
- * Per-phone-number session store. Persistence is a fire-and-forget JSON
- * snapshot on disk (src/data/sessions.json, gitignored) so a dev-server
- * restart doesn't lose in-flight conversations; it is not a source of truth
- * for anything beyond local demo convenience.
+ * Per-phone-number session store, with an in-memory Map as a fast-path cache
+ * in front of whichever durable backend is available: Postgres (when
+ * DATABASE_URL is set - the only thing that actually survives a Vercel
+ * serverless instance recycling) or, for local dev without a DB, a debounced
+ * JSON snapshot on disk (src/data/sessions.json, gitignored).
  */
 export class SessionStore {
   private readonly sessions = new Map<string, Session>();
   private readonly persist: boolean;
   private readonly filePath = path.join(DATA_DIR, 'sessions.json');
+  private readonly db: Db | null;
 
   constructor(options: SessionStoreOptions = {}) {
     this.persist = options.persist ?? true;
-    if (this.persist) this.load();
+    this.db = getDb();
+    if (this.persist && !this.db) this.load();
   }
 
-  get(phone: string, now: number): Session {
-    const existing = this.sessions.get(phone);
-    if (existing) return existing;
+  async get(phone: string, now: number): Promise<Session> {
+    const cached = this.sessions.get(phone);
+    if (cached) return cached;
+
+    if (this.db) {
+      const fromDb = await this.fetchFromDb(this.db, phone);
+      if (fromDb) {
+        this.sessions.set(phone, fromDb);
+        return fromDb;
+      }
+    }
+
     const created = freshSession(phone, now);
     this.sessions.set(phone, created);
     return created;
   }
 
-  set(session: Session): void {
+  async set(session: Session): Promise<void> {
     this.sessions.set(session.phone, session);
+    if (this.db) {
+      await this.saveToDb(this.db, session);
+      return;
+    }
     if (this.persist) this.scheduleSave();
+  }
+
+  private async fetchFromDb(db: Db, phone: string): Promise<Session | null> {
+    try {
+      const rows = await db.select().from(sessionsTable).where(eq(sessionsTable.phone, phone)).limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return {
+        phone: row.phone,
+        state: row.state,
+        shownRecommendations: row.shownRecommendations,
+        selected: row.selected,
+        quantity: row.quantity,
+        address: row.address,
+        appliedPromoCode: row.appliedPromoCode,
+        appliedDiscount: row.appliedDiscount,
+        currentOrder: row.currentOrder,
+        updatedAt: row.updatedAt.getTime(),
+      };
+    } catch (err) {
+      log.error('failed to load session from Postgres', err);
+      return null;
+    }
+  }
+
+  private async saveToDb(db: Db, session: Session): Promise<void> {
+    try {
+      await db
+        .insert(sessionsTable)
+        .values({
+          phone: session.phone,
+          state: session.state,
+          shownRecommendations: session.shownRecommendations,
+          selected: session.selected,
+          quantity: session.quantity,
+          address: session.address,
+          appliedPromoCode: session.appliedPromoCode,
+          appliedDiscount: session.appliedDiscount,
+          currentOrder: session.currentOrder,
+          updatedAt: new Date(session.updatedAt),
+        })
+        .onConflictDoUpdate({
+          target: sessionsTable.phone,
+          set: {
+            state: session.state,
+            shownRecommendations: session.shownRecommendations,
+            selected: session.selected,
+            quantity: session.quantity,
+            address: session.address,
+            appliedPromoCode: session.appliedPromoCode,
+            appliedDiscount: session.appliedDiscount,
+            currentOrder: session.currentOrder,
+            updatedAt: new Date(session.updatedAt),
+          },
+        });
+    } catch (err) {
+      log.error('failed to persist session to Postgres', err);
+    }
   }
 
   private saveTimer: NodeJS.Timeout | null = null;

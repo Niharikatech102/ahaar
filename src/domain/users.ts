@@ -1,7 +1,10 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { eq } from 'drizzle-orm';
 import { DATA_DIR } from '../config.js';
 import { createLogger } from '../logger.js';
+import { getDb } from '../db/client.js';
+import { users as usersTable } from '../db/schema.js';
 import type { UserProfile } from './types.js';
 
 /**
@@ -28,12 +31,10 @@ function loadUsers(): UserProfile[] {
   return JSON.parse(raw) as UserProfile[];
 }
 
+// Local-file fallback (used only when no DATABASE_URL is set). Once a DB is
+// configured, every read/write below goes straight to Postgres instead.
 const seededUsers: UserProfile[] = loadUsers();
 
-// Customers added through the simulator's "Add new customer" flow. Kept in
-// their own file (not users.json, which is seed data checked into git) and
-// persisted to disk so a newly added customer survives a server restart,
-// same as a placed order does via SessionStore.
 const ADDED_USERS_FILE = path.join(DATA_DIR, 'added_users.json');
 
 function loadAddedUsers(): UserProfile[] {
@@ -61,25 +62,39 @@ function generateGuestPhone(): string {
   return `whatsapp:+1999${n}`;
 }
 
-/** A phone number not already used by a seeded or previously-added customer. */
-function uniqueGuestPhone(): string {
-  let phone = generateGuestPhone();
-  while (seededUsers.some((u) => u.phone === phone) || addedUsers.some((u) => u.phone === phone)) {
-    phone = generateGuestPhone();
-  }
-  return phone;
+function rowToProfile(row: typeof usersTable.$inferSelect): UserProfile {
+  return { phone: row.phone, name: row.name, addresses: row.addresses, orderHistory: row.orderHistory };
 }
 
-export function getAllUsers(): UserProfile[] {
+export async function getAllUsers(): Promise<UserProfile[]> {
+  const db = getDb();
+  if (db) {
+    const rows = await db.select().from(usersTable);
+    return rows.map(rowToProfile);
+  }
   return [...seededUsers, ...addedUsers];
 }
 
-export function getUserByPhone(phone: string): UserProfile | undefined {
+export async function getUserByPhone(phone: string): Promise<UserProfile | undefined> {
+  const db = getDb();
+  if (db) {
+    const rows = await db.select().from(usersTable).where(eq(usersTable.phone, phone)).limit(1);
+    return rows[0] ? rowToProfile(rows[0]) : undefined;
+  }
   return seededUsers.find((u) => u.phone === phone) ?? addedUsers.find((u) => u.phone === phone);
 }
 
-export function isPhoneTaken(phone: string): boolean {
-  return getUserByPhone(phone) !== undefined;
+export async function isPhoneTaken(phone: string): Promise<boolean> {
+  return (await getUserByPhone(phone)) !== undefined;
+}
+
+/** A phone number not already used by any existing customer. */
+async function uniqueGuestPhone(): Promise<string> {
+  let phone = generateGuestPhone();
+  while (await isPhoneTaken(phone)) {
+    phone = generateGuestPhone();
+  }
+  return phone;
 }
 
 /**
@@ -90,13 +105,25 @@ export function isPhoneTaken(phone: string): boolean {
  * are optional so a quick test customer can still be added with just a
  * name; the router validates a provided phone before calling this.
  */
-export function addUser(name: string, phone?: string, addressLine?: string): UserProfile {
+export async function addUser(name: string, phone?: string, addressLine?: string): Promise<UserProfile> {
   const profile: UserProfile = {
-    phone: phone ?? uniqueGuestPhone(),
+    phone: phone ?? (await uniqueGuestPhone()),
     name,
     addresses: addressLine ? [{ id: 'a1', label: 'Home', line: addressLine, isDefault: true }] : [],
     orderHistory: [],
   };
+
+  const db = getDb();
+  if (db) {
+    await db.insert(usersTable).values({
+      phone: profile.phone,
+      name: profile.name,
+      addresses: profile.addresses,
+      orderHistory: profile.orderHistory,
+    });
+    return profile;
+  }
+
   addedUsers.push(profile);
   persistAddedUsers();
   return profile;
@@ -107,6 +134,6 @@ export function guestProfile(phone: string): UserProfile {
   return { phone, name: 'Guest', addresses: [], orderHistory: [] };
 }
 
-export function getProfileOrGuest(phone: string): UserProfile {
-  return getUserByPhone(phone) ?? guestProfile(phone);
+export async function getProfileOrGuest(phone: string): Promise<UserProfile> {
+  return (await getUserByPhone(phone)) ?? guestProfile(phone);
 }

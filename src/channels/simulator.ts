@@ -16,12 +16,12 @@ const STREAM_INTERVAL_MS = 2000;
 export function createSimulatorRouter(store: SessionStore): Router {
   const router = Router();
 
-  router.get('/users', (_req: Request, res: Response) => {
-    const users = getAllUsers().map((u) => ({ phone: u.phone, name: u.name }));
-    res.json({ users });
+  router.get('/users', async (_req: Request, res: Response) => {
+    const allUsers = await getAllUsers();
+    res.json({ users: allUsers.map((u) => ({ phone: u.phone, name: u.name })) });
   });
 
-  router.post('/users', (req: Request, res: Response) => {
+  router.post('/users', async (req: Request, res: Response) => {
     const { name, phone, address } = (req.body ?? {}) as {
       name?: unknown;
       phone?: unknown;
@@ -39,25 +39,25 @@ export function createSimulatorRouter(store: SessionStore): Router {
         res.status(400).json({ error: 'phone number looks invalid' });
         return;
       }
-      if (isPhoneTaken(resolvedPhone)) {
+      if (await isPhoneTaken(resolvedPhone)) {
         res.status(409).json({ error: 'a customer with this phone number already exists' });
         return;
       }
     }
 
     const addressLine = typeof address === 'string' && address.trim() ? address.trim() : undefined;
-    const profile = addUser(name.trim(), resolvedPhone, addressLine);
+    const profile = await addUser(name.trim(), resolvedPhone, addressLine);
     res.status(201).json({ phone: profile.phone, name: profile.name });
   });
 
-  router.get('/orders/current', (req: Request, res: Response) => {
+  router.get('/orders/current', async (req: Request, res: Response) => {
     const phone = req.query['phone'];
     if (typeof phone !== 'string' || !phone.trim()) {
       res.status(400).json({ error: 'phone query parameter is required' });
       return;
     }
 
-    const session = store.get(phone, Date.now());
+    const session = await store.get(phone, Date.now());
     if (!session.currentOrder) {
       res.json({ order: null });
       return;
@@ -83,7 +83,7 @@ export function createSimulatorRouter(store: SessionStore): Router {
     }
   });
 
-  router.get('/orders/:orderId/stream', (req: Request, res: Response) => {
+  router.get('/orders/:orderId/stream', async (req: Request, res: Response) => {
     const { orderId } = req.params;
     const phone = req.query['phone'];
     if (typeof phone !== 'string' || !phone.trim()) {
@@ -91,7 +91,7 @@ export function createSimulatorRouter(store: SessionStore): Router {
       return;
     }
 
-    const session = store.get(phone, Date.now());
+    const session = await store.get(phone, Date.now());
     const order = session.currentOrder;
     if (!order || order.id !== orderId) {
       res.status(404).json({ error: 'no matching order for this phone' });

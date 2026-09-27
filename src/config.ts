@@ -48,11 +48,19 @@ export const config = {
     apiKey: str('GROQ_API_KEY'),
     model: str('GROQ_MODEL', 'openai/gpt-oss-20b'),
   },
+  database: {
+    url: str('DATABASE_URL'),
+  },
 } as const;
 
 /** True when a Groq key is configured - otherwise intent parsing falls back to the keyword parser. */
 export function isLlmConfigured(): boolean {
   return Boolean(config.groq.apiKey);
+}
+
+/** True when a Postgres connection string is configured - otherwise storage falls back to local JSON files. */
+export function isDbConfigured(): boolean {
+  return Boolean(config.database.url);
 }
 
 /** True when there are enough credentials to actually reach WhatsApp. */

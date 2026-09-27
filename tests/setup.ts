@@ -8,6 +8,10 @@ import { fileURLToPath } from 'node:url';
 // and process.loadEnvFile() never overrides an already-set variable.
 process.env.GROQ_API_KEY = '';
 
+// Same reasoning: tests must not depend on a live Postgres connection either
+// - they exercise the local-JSON fallback path, same as before the DB existed.
+process.env.DATABASE_URL = '';
+
 // Tests must never depend on state left over from a previous test run, or
 // from manually using `npm run dev` beforehand - sessions and added
 // customers both persist to on-disk snapshots for exactly that reason.

@@ -9,35 +9,35 @@ import {
 } from '../src/domain/users.js';
 
 describe('addUser', () => {
-  it('registers a new customer with no history and no saved address', () => {
-    const profile = addUser('Priya');
+  it('registers a new customer with no history and no saved address', async () => {
+    const profile = await addUser('Priya');
     expect(profile.name).toBe('Priya');
     expect(profile.phone).toMatch(/^whatsapp:\+1999\d+$/);
     expect(profile.orderHistory).toEqual([]);
     expect(profile.addresses).toEqual([]);
   });
 
-  it('is immediately findable by phone and appears in the full user list', () => {
-    const profile = addUser('Karan');
-    expect(getUserByPhone(profile.phone)?.name).toBe('Karan');
-    expect(getAllUsers().some((u) => u.phone === profile.phone)).toBe(true);
+  it('is immediately findable by phone and appears in the full user list', async () => {
+    const profile = await addUser('Karan');
+    expect((await getUserByPhone(profile.phone))?.name).toBe('Karan');
+    expect((await getAllUsers()).some((u) => u.phone === profile.phone)).toBe(true);
   });
 
-  it('gives two different customers distinct phone numbers', () => {
-    const a = addUser('Customer A');
-    const b = addUser('Customer B');
+  it('gives two different customers distinct phone numbers', async () => {
+    const a = await addUser('Customer A');
+    const b = await addUser('Customer B');
     expect(a.phone).not.toBe(b.phone);
   });
 
-  it('does not affect the seeded demo users', () => {
-    const before = getAllUsers().filter((u) => u.phone === 'whatsapp:+15551230001');
-    addUser('Someone New');
-    const after = getAllUsers().filter((u) => u.phone === 'whatsapp:+15551230001');
+  it('does not affect the seeded demo users', async () => {
+    const before = (await getAllUsers()).filter((u) => u.phone === 'whatsapp:+15551230001');
+    await addUser('Someone New');
+    const after = (await getAllUsers()).filter((u) => u.phone === 'whatsapp:+15551230001');
     expect(after).toEqual(before);
   });
 
-  it('saves a provided phone and address as the customer default address', () => {
-    const profile = addUser('Full Details', 'whatsapp:+919876543210', '42 Custom Lane, Pune');
+  it('saves a provided phone and address as the customer default address', async () => {
+    const profile = await addUser('Full Details', 'whatsapp:+919876543210', '42 Custom Lane, Pune');
     expect(profile.phone).toBe('whatsapp:+919876543210');
     expect(profile.addresses).toEqual([
       { id: 'a1', label: 'Home', line: '42 Custom Lane, Pune', isDefault: true },
@@ -66,13 +66,13 @@ describe('isPlausiblePhone', () => {
 });
 
 describe('isPhoneTaken', () => {
-  it('is true for a seeded user and false for an unused number', () => {
-    expect(isPhoneTaken('whatsapp:+15551230001')).toBe(true);
-    expect(isPhoneTaken('whatsapp:+910000000000')).toBe(false);
+  it('is true for a seeded user and false for an unused number', async () => {
+    expect(await isPhoneTaken('whatsapp:+15551230001')).toBe(true);
+    expect(await isPhoneTaken('whatsapp:+910000000000')).toBe(false);
   });
 
-  it('is true for a phone just registered via addUser', () => {
-    const profile = addUser('Just Added', 'whatsapp:+919000011111');
-    expect(isPhoneTaken(profile.phone)).toBe(true);
+  it('is true for a phone just registered via addUser', async () => {
+    const profile = await addUser('Just Added', 'whatsapp:+919000011111');
+    expect(await isPhoneTaken(profile.phone)).toBe(true);
   });
 });

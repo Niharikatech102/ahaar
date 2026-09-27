@@ -1,15 +1,24 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { handleMessage, type Ctx } from '../src/core/stateMachine.js';
 import { freshSession, type Session } from '../src/core/session.js';
 import { getUserByPhone, guestProfile } from '../src/domain/users.js';
 import { statusAt } from '../src/domain/delivery.js';
+import type { UserProfile } from '../src/domain/types.js';
 
 const PHONE = 'whatsapp:+15551230001'; // Aryan - has biryani history, one default address
 const NOW_0 = 1_700_000_000_000;
 
+// getUserByPhone is async (it goes through Postgres when DATABASE_URL is
+// set), so this profile is fetched once up front rather than inside ctxAt -
+// it never changes across these tests, only `now` does.
+let cachedProfile: UserProfile;
+
+beforeAll(async () => {
+  cachedProfile = (await getUserByPhone(PHONE))!;
+});
+
 function ctxAt(now: number): Ctx {
-  const profile = getUserByPhone(PHONE)!;
-  return { profile, now, orderIdFactory: () => 'ORD-TEST-0001' };
+  return { profile: cachedProfile, now, orderIdFactory: () => 'ORD-TEST-0001' };
 }
 
 function step(session: Session, text: string, now: number) {

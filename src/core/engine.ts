@@ -36,8 +36,8 @@ export async function processMessage(
   text: string,
   now: number = Date.now(),
 ): Promise<EngineResult> {
-  const session = store.get(phone, now);
-  const profile = getProfileOrGuest(phone);
+  const session = await store.get(phone, now);
+  const profile = await getProfileOrGuest(phone);
 
   // Only worth calling the LLM for a fresh free-text search. That's either
   // a genuinely new search (state IDLE), or a user retyping a dish instead
@@ -58,7 +58,7 @@ export async function processMessage(
     now,
     parsedQueryOverride,
   });
-  store.set(nextSession);
+  await store.set(nextSession);
   return {
     replies,
     orderId: nextSession.currentOrder?.id ?? null,
