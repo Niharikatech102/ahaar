@@ -65,11 +65,17 @@ describe('full ordering flow: search -> select -> quantity -> cart -> checkout -
     // 6. Skip promo
     result = step(session, 'SKIP', NOW_0 + 4000);
     session = result.session;
-    expect(session.state).toBe('AWAITING_CONFIRM');
-    expect(result.replies[0]).toContain('Total: ₹');
+    expect(session.state).toBe('AWAITING_PAYMENT');
     expect(session.appliedPromoCode).toBeNull();
 
-    // 7. Confirm order
+    // 7. Choose payment method
+    result = step(session, 'COD', NOW_0 + 4500);
+    session = result.session;
+    expect(session.state).toBe('AWAITING_CONFIRM');
+    expect(result.replies[0]).toContain('Total: ₹');
+    expect(result.replies[0]).toContain('Cash on Delivery');
+
+    // 8. Confirm order
     result = step(session, 'CONFIRM', NOW_0 + 5000);
     session = result.session;
     expect(session.state).toBe('IDLE');
@@ -78,13 +84,13 @@ describe('full ordering flow: search -> select -> quantity -> cart -> checkout -
     expect(session.currentOrder?.id).toBe('ORD-TEST-0001');
     expect(result.replies[0]).toContain('Order placed');
 
-    // 8. Immediately after placing, status is CONFIRMED
+    // 9. Immediately after placing, status is CONFIRMED
     result = step(session, 'STATUS', NOW_0 + 5500);
     session = result.session;
     expect(result.replies[0]).toContain('confirmed');
 
-    // 9. Later, status progresses toward delivery
-    const laterStatus = statusAt(session.currentOrder!.placedAt, NOW_0 + 5000 + 50_000);
+    // 10. Later, status progresses toward delivery
+    const laterStatus = statusAt(session.currentOrder!.placedAt, NOW_0 + 5000 + 60_000);
     expect(laterStatus).toBe('OUT_FOR_DELIVERY');
   });
 
@@ -98,10 +104,13 @@ describe('full ordering flow: search -> select -> quantity -> cart -> checkout -
 
     const promoResult = step(session, 'BIRYANI20', NOW_0);
     session = promoResult.session;
-    expect(session.state).toBe('AWAITING_CONFIRM');
+    expect(session.state).toBe('AWAITING_PAYMENT');
     expect(session.appliedPromoCode).toBe('BIRYANI20');
     expect(promoResult.replies[0]).toContain('Applied *BIRYANI20*');
-    expect(promoResult.replies.join('\n')).toContain('Discount (BIRYANI20)');
+
+    const paymentResult = step(session, 'COD', NOW_0);
+    expect(paymentResult.session.state).toBe('AWAITING_CONFIRM');
+    expect(paymentResult.replies.join('\n')).toContain('Discount (BIRYANI20)');
   });
 
   it('rejects an invalid promo code and stays in AWAITING_PROMO', () => {
@@ -228,10 +237,17 @@ describe('cold-start user with no saved address and no history', () => {
 
     result = handleMessage(session, 'SKIP', ctx);
     session = result.session;
+    expect(session.state).toBe('AWAITING_PAYMENT');
+
+    result = handleMessage(session, 'UPI', ctx);
+    session = result.session;
+    expect(session.state).toBe('AWAITING_CONFIRM');
+
     result = handleMessage(session, 'CONFIRM', ctx);
     session = result.session;
     expect(session.state).toBe('IDLE');
     expect(session.currentOrder?.id).toBe('ORD-GUEST-1');
+    expect(session.currentOrder?.paymentMethod).toBe('UPI');
   });
 });
 
@@ -244,6 +260,7 @@ function placeOrder(now: number): Session {
   session = step(session, 'CHECKOUT', now).session;
   session = step(session, 'YES', now).session;
   session = step(session, 'SKIP', now).session;
+  session = step(session, 'COD', now).session;
   return step(session, 'CONFIRM', now).session;
 }
 
@@ -279,6 +296,8 @@ describe('multi-item cart', () => {
     result = step(session, '42 Test Lane', NOW_0 + 4500);
     session = result.session;
     result = step(session, 'SKIP', NOW_0 + 5000);
+    session = result.session;
+    result = step(session, 'COD', NOW_0 + 5200);
     session = result.session;
     result = step(session, 'CONFIRM', NOW_0 + 5500);
     session = result.session;
@@ -431,5 +450,90 @@ describe('post-delivery rating', () => {
     const placed = placeOrder(NOW_0);
     const result = step(placed, 'STATUS', NOW_0 + 50_000); // past the 45s OUT_FOR_DELIVERY mark
     expect(result.replies[0]).toMatch(/delivery partner/i);
+  });
+});
+
+describe('MY USUAL', () => {
+  it('adds the most-frequently-ordered dish to the cart, not simply the last one', () => {
+    // Aryan's seeded history has no repeated (restaurant,item) pair, so the
+    // tie is broken by recency - i0101 (Veg Biryani, Biryani House) was
+    // ordered most recently (4 days ago) among the tied count-1 entries.
+    const session = freshSession(PHONE, NOW_0);
+    const result = step(session, 'MY USUAL', NOW_0);
+    expect(result.session.cart).toHaveLength(1);
+    expect(result.session.cart[0]!.itemId).toBe('i0101');
+    expect(result.replies[0]).toMatch(/your usual/i);
+  });
+
+  it('says so when there is no order history to draw from', () => {
+    const guestSession = freshSession('whatsapp:+19998887777', NOW_0);
+    const ctx: Ctx = { profile: guestProfile('whatsapp:+19998887777'), now: NOW_0 };
+    const result = handleMessage(guestSession, 'MY USUAL', ctx);
+    expect(result.replies[0]).toMatch(/don't have enough order history/i);
+  });
+
+  it('is refused mid-flow like the other cart commands', () => {
+    let session = freshSession(PHONE, NOW_0);
+    session = step(session, 'Veg Biryani', NOW_0).session;
+    const result = step(session, 'MY USUAL', NOW_0 + 1000);
+    expect(result.session.state).toBe('AWAITING_SELECTION');
+    expect(result.replies[0]).toMatch(/finish/i);
+  });
+});
+
+describe('BEST DISCOUNT', () => {
+  it('applies the highest-saving eligible promo when asked in natural language during the promo step', () => {
+    let session = freshSession(PHONE, NOW_0);
+    session = step(session, 'Veg Biryani', NOW_0).session;
+    session = step(session, '1', NOW_0).session;
+    session = step(session, '2', NOW_0).session; // qty 2 -> crosses MEGA100's minimum, same as the APPLY test
+    session = step(session, 'CHECKOUT', NOW_0).session;
+    session = step(session, 'YES', NOW_0).session;
+
+    const result = step(session, 'best discount', NOW_0);
+    expect(result.session.state).toBe('AWAITING_PAYMENT');
+    expect(result.session.appliedPromoCode).toBeTruthy();
+    expect(result.replies[0]).toMatch(/applied/i);
+  });
+
+  it('recognizes realistic natural phrasing, not just the bare phrase', () => {
+    // Regression: exact-phrase matching missed "apply the best discount"
+    // (extra words) when this was first tried live.
+    for (const phrase of ['apply the best discount', "what's the best deal", 'give me the biggest offer']) {
+      let session = freshSession(PHONE, NOW_0);
+      session = step(session, 'Veg Biryani', NOW_0).session;
+      session = step(session, '1', NOW_0).session;
+      session = step(session, '2', NOW_0).session;
+      session = step(session, 'CHECKOUT', NOW_0).session;
+      session = step(session, 'YES', NOW_0).session;
+
+      const result = step(session, phrase, NOW_0);
+      expect(result.session.state).toBe('AWAITING_PAYMENT');
+      expect(result.session.appliedPromoCode).toBeTruthy();
+    }
+  });
+});
+
+describe('MY TOTAL', () => {
+  it('shows the running total including any discount already applied', () => {
+    let session = freshSession(PHONE, NOW_0);
+    session = step(session, 'Veg Biryani', NOW_0).session;
+    session = step(session, '1', NOW_0).session;
+    session = step(session, '2', NOW_0).session;
+    session = step(session, 'CHECKOUT', NOW_0).session;
+    session = step(session, 'YES', NOW_0).session;
+    session = step(session, 'best discount', NOW_0).session;
+
+    const result = step(session, "what's my total", NOW_0);
+    expect(result.replies[0]).toMatch(/total so far/i);
+    expect(result.replies[0]).toContain('Discount');
+    // Should not disturb the in-progress checkout state.
+    expect(result.session.state).toBe('AWAITING_PAYMENT');
+  });
+
+  it('says the cart is empty rather than showing a bogus total', () => {
+    const session = freshSession(PHONE, NOW_0);
+    const result = step(session, 'total', NOW_0);
+    expect(result.replies[0]).toMatch(/cart is empty/i);
   });
 });

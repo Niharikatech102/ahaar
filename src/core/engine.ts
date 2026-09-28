@@ -3,6 +3,7 @@ import { handleMessage, type QuickReply } from './stateMachine.js';
 import { parseAddCommand, parseGlobalCommand, parseQuantityUpdateCommand, parseRemoveCommand, parseSelection } from './intent.js';
 import { parseQueryWithLLM } from './llmIntent.js';
 import type { SessionStore } from './session.js';
+import type { Recommendation } from '../domain/types.js';
 
 export type { QuickReply };
 
@@ -21,6 +22,15 @@ export interface EngineResult {
    * field on this response.
    */
   quickReplies: QuickReply[] | null;
+  /**
+   * The structured data behind the recommendation cards just shown, or null
+   * otherwise - lets a richer UI (the desktop recommendation cards) wire a
+   * real "Add to Cart" button to the exact restaurant/item id instead of
+   * re-parsing dish names out of the chat text. Only present right when
+   * `replies` contains freshly-shown recommendations (state just became
+   * AWAITING_SELECTION); null on every other turn.
+   */
+  recommendations: Recommendation[] | null;
 }
 
 /**
@@ -70,5 +80,6 @@ export async function processMessage(
     replies,
     orderId: nextSession.currentOrder?.id ?? null,
     quickReplies: quickReplies ?? null,
+    recommendations: nextSession.state === 'AWAITING_SELECTION' ? nextSession.shownRecommendations : null,
   };
 }

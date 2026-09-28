@@ -5,7 +5,7 @@ import { DATA_DIR } from '../config.js';
 import { createLogger } from '../logger.js';
 import { getDb, type Db } from '../db/client.js';
 import { sessions as sessionsTable } from '../db/schema.js';
-import type { CartItem, Order } from '../domain/order.js';
+import type { CartItem, Order, PaymentMethod } from '../domain/order.js';
 import type { CatalogEntry, Recommendation } from '../domain/types.js';
 
 const log = createLogger('session');
@@ -16,6 +16,7 @@ export type ConversationState =
   | 'AWAITING_QUANTITY'
   | 'AWAITING_ADDRESS'
   | 'AWAITING_PROMO'
+  | 'AWAITING_PAYMENT'
   | 'AWAITING_CONFIRM';
 
 export interface Session {
@@ -30,6 +31,8 @@ export interface Session {
   address: string | null;
   appliedPromoCode: string | null;
   appliedDiscount: number;
+  /** Picked during AWAITING_PAYMENT; carried onto the placed Order. Demo-only, no real payment integration. */
+  paymentMethod: PaymentMethod | null;
   currentOrder: Order | null;
   /** Order id awaiting a reply to the post-delivery rating prompt, or null if none is pending. */
   pendingRatingOrderId: string | null;
@@ -49,6 +52,7 @@ export function freshSession(phone: string, now: number): Session {
     address: null,
     appliedPromoCode: null,
     appliedDiscount: 0,
+    paymentMethod: null,
     currentOrder: null,
     pendingRatingOrderId: null,
     ratingHandledForOrderId: null,
@@ -67,6 +71,7 @@ export function resetToIdle(session: Session, now: number): Session {
     address: null,
     appliedPromoCode: null,
     appliedDiscount: 0,
+    paymentMethod: null,
     updatedAt: now,
   };
 }
@@ -136,6 +141,7 @@ export class SessionStore {
         address: row.address,
         appliedPromoCode: row.appliedPromoCode,
         appliedDiscount: row.appliedDiscount,
+        paymentMethod: row.paymentMethod,
         currentOrder: row.currentOrder,
         pendingRatingOrderId: row.pendingRatingOrderId,
         ratingHandledForOrderId: row.ratingHandledForOrderId,
@@ -161,6 +167,7 @@ export class SessionStore {
           address: session.address,
           appliedPromoCode: session.appliedPromoCode,
           appliedDiscount: session.appliedDiscount,
+          paymentMethod: session.paymentMethod,
           currentOrder: session.currentOrder,
           pendingRatingOrderId: session.pendingRatingOrderId,
           ratingHandledForOrderId: session.ratingHandledForOrderId,
@@ -177,6 +184,7 @@ export class SessionStore {
             address: session.address,
             appliedPromoCode: session.appliedPromoCode,
             appliedDiscount: session.appliedDiscount,
+            paymentMethod: session.paymentMethod,
             currentOrder: session.currentOrder,
             pendingRatingOrderId: session.pendingRatingOrderId,
             ratingHandledForOrderId: session.ratingHandledForOrderId,

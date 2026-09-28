@@ -3,64 +3,130 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ahaar — Food Ordering Bot Simulator</title>
+  <title>Ahaar — AI Food Ordering Assistant</title>
   <link rel="icon" href="/assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
   <div class="stage">
     <div class="app-shell">
-      <aside class="side-panel">
+      <!-- LEFT SIDEBAR -->
+      <aside class="sidebar">
         <div class="brand">
-          <img class="brand-mark" src="/assets/logo.png" alt="Ahaar logo" />
+          <img class="brand-logo" src="/assets/logo.png" alt="Ahaar" />
           <div class="brand-text">
             <div class="brand-name">Ahaar</div>
-            <div class="brand-tag">Local WhatsApp bot simulator</div>
+            <div class="brand-tag">Good food, brighter days</div>
           </div>
         </div>
 
-        <div class="panel-section">
+        <button type="button" class="new-order-btn" id="newOrderBtn">+ New order</button>
+
+        <nav class="nav-list" id="navList">
+          <button type="button" class="nav-item active" data-nav="chat">
+            <span class="nav-icon">chat</span>Chat
+          </button>
+          <button type="button" class="nav-item" data-nav="browse">
+            <span class="nav-icon">menu</span>Browse menu
+          </button>
+          <button type="button" class="nav-item" data-nav="orders">
+            <span class="nav-icon">order</span>My orders
+          </button>
+          <button type="button" class="nav-item" data-nav="preferences">
+            <span class="nav-icon">pref</span>My preferences
+          </button>
+          <button type="button" class="nav-item" data-nav="promos">
+            <span class="nav-icon">tag</span>Promo codes
+          </button>
+        </nav>
+
+        <div class="sidebar-section">
           <div class="section-label">Chatting as</div>
           <div id="userList" class="user-list"></div>
         </div>
 
-        <p class="panel-footer">
-          This simulator runs the exact same conversation engine as the WhatsApp
-          integration — no credentials needed. Switching contacts switches the
-          conversation, so you can see order history change the recommendations.
-        </p>
+        <div class="promo-teaser" id="promoTeaser" data-nav="promos">
+          <div class="promo-teaser-title">Offers waiting for you</div>
+          <div class="promo-teaser-body" id="promoTeaserBody">Loading current offers…</div>
+          <span class="promo-teaser-cta">View all promo codes →</span>
+        </div>
       </aside>
 
-      <main class="chat-wrap">
+      <!-- CENTER: CHAT -->
+      <main class="chat-main">
         <header class="chat-header">
-          <img class="avatar" src="/assets/logo.png" alt="Ahaar Food Bot" />
-          <div class="header-text">
-            <div class="title">Ahaar Food Bot</div>
-            <div class="subtitle"><span class="pulse-dot"></span><span id="statusLine">online</span></div>
+          <img class="chat-avatar" src="/assets/logo.png" alt="" />
+          <div class="chat-header-text">
+            <div class="chat-title">Ahaar Food Bot</div>
+            <div class="chat-subtitle"><span class="pulse-dot"></span><span id="statusLine">online</span></div>
           </div>
         </header>
 
-        <div id="orderTracker" class="order-tracker hidden">
-          <div class="tracker-title" id="trackerTitle">Order status</div>
-          <div class="tracker-steps">
-            <div class="step" data-step="CONFIRMED"><span class="dot"></span>Confirmed</div>
-            <div class="step" data-step="PREPARING"><span class="dot"></span>Preparing</div>
-            <div class="step" data-step="OUT_FOR_DELIVERY"><span class="dot"></span>Out for delivery</div>
-            <div class="step" data-step="DELIVERED"><span class="dot"></span>Delivered</div>
-          </div>
-          <div id="trackerPartner" class="tracker-partner hidden"></div>
-        </div>
-
         <div id="transcript" class="transcript"></div>
 
+        <div class="quick-suggestions" id="quickSuggestions"></div>
+
         <form id="composer" class="composer">
-          <input id="textInput" type="text" placeholder="Type a dish, e.g. Veg Biryani" autocomplete="off" />
-          <button type="submit">Send</button>
+          <button type="button" class="composer-icon-btn" disabled title="Attachments aren't part of this demo">📎</button>
+          <input id="textInput" type="text" placeholder="Tell me what you're craving…" autocomplete="off" />
+          <button type="button" class="composer-icon-btn" disabled title="Voice input isn't part of this demo">🎤</button>
+          <button type="submit" class="send-btn">Send</button>
         </form>
       </main>
+
+      <!-- RIGHT: CART + TRACKING -->
+      <aside class="right-panel">
+        <div class="cart-panel">
+          <div class="panel-header">
+            <div class="panel-title" id="cartTitle">Your cart</div>
+            <button type="button" class="text-btn" id="clearCartBtn">Clear</button>
+          </div>
+
+          <div id="cartItems" class="cart-items">
+            <div class="cart-empty">Your cart is empty. Ask Ahaar for something to eat.</div>
+          </div>
+
+          <div class="promo-row">
+            <input id="promoInput" type="text" placeholder="Have a promo code?" autocomplete="off" />
+            <button type="button" id="applyPromoBtn">Apply</button>
+          </div>
+          <button type="button" class="best-discount-btn hidden" id="bestDiscountBtn">Use best available discount</button>
+          <div id="promoFeedback" class="promo-feedback hidden"></div>
+
+          <div class="bill-breakdown hidden" id="billBreakdown"></div>
+
+          <button type="button" class="checkout-btn" id="checkoutBtn" disabled>Proceed to checkout</button>
+        </div>
+
+        <div class="tracking-panel">
+          <div class="panel-header">
+            <div class="panel-title">Order tracking</div>
+          </div>
+
+          <div id="orderTracker" class="order-tracker hidden">
+            <div class="tracker-order-id" id="trackerOrderId"></div>
+            <div class="tracker-steps">
+              <div class="step" data-step="CONFIRMED"><span class="dot"></span>Confirmed</div>
+              <div class="step" data-step="PREPARING"><span class="dot"></span>Preparing</div>
+              <div class="step" data-step="PICKED_UP"><span class="dot"></span>Picked up</div>
+              <div class="step" data-step="OUT_FOR_DELIVERY"><span class="dot"></span>Out for delivery</div>
+              <div class="step" data-step="DELIVERED"><span class="dot"></span>Delivered</div>
+            </div>
+            <div id="trackerPartner" class="tracker-partner hidden"></div>
+          </div>
+          <div class="tracking-empty" id="trackingEmpty">No active order right now.</div>
+        </div>
+      </aside>
     </div>
   </div>
 
+  <!-- Add customer modal -->
   <div id="addUserOverlay" class="modal-overlay hidden">
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="addUserTitle">
       <div class="modal-header">
@@ -91,6 +157,69 @@
           <button type="submit" class="modal-btn primary">Add customer</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Preferences modal -->
+  <div id="preferencesOverlay" class="modal-overlay hidden">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="preferencesTitle">
+      <div class="modal-header">
+        <h2 id="preferencesTitle">My preferences</h2>
+        <button type="button" id="preferencesClose" class="modal-close" aria-label="Close">✕</button>
+      </div>
+
+      <form id="preferencesForm" class="modal-form">
+        <label class="modal-field">
+          <span>Favourite cuisines <em>(comma separated)</em></span>
+          <input id="prefCuisines" type="text" placeholder="e.g. biryani, italian, thai" autocomplete="off" />
+        </label>
+
+        <label class="modal-field">
+          <span>Dietary preference</span>
+          <select id="prefDietary">
+            <option value="">No preference</option>
+            <option value="veg">Vegetarian</option>
+            <option value="non-veg">Non-vegetarian</option>
+            <option value="vegan">Vegan</option>
+          </select>
+        </label>
+
+        <label class="modal-field">
+          <span>Spice level</span>
+          <select id="prefSpice">
+            <option value="">No preference</option>
+            <option value="mild">Mild</option>
+            <option value="medium">Medium</option>
+            <option value="spicy">Spicy</option>
+          </select>
+        </label>
+
+        <label class="modal-field">
+          <span>Usual budget per dish (₹) <em>(optional)</em></span>
+          <input id="prefBudget" type="number" min="1" placeholder="e.g. 300" autocomplete="off" />
+        </label>
+
+        <p id="preferencesError" class="modal-error hidden"></p>
+
+        <div class="modal-actions">
+          <button type="button" id="preferencesCancel" class="modal-btn secondary">Cancel</button>
+          <button type="submit" class="modal-btn primary">Save preferences</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Generic info modal: Browse menu / My orders / Promo codes / Food details -->
+  <div id="infoOverlay" class="modal-overlay hidden">
+    <div class="modal-dialog modal-dialog-wide" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+      <div class="modal-header">
+        <h2 id="infoTitle">—</h2>
+        <button type="button" id="infoClose" class="modal-close" aria-label="Close">✕</button>
+      </div>
+      <div id="infoSearch" class="modal-search hidden">
+        <input id="infoSearchInput" type="text" placeholder="Search the menu…" autocomplete="off" />
+      </div>
+      <div id="infoBody" class="modal-body"></div>
     </div>
   </div>
 

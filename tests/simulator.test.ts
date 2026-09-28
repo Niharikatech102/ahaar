@@ -159,6 +159,7 @@ describe('GET /sim/orders/current', () => {
     await send('CHECKOUT');
     await send('YES');
     await send('SKIP');
+    await send('COD');
     const confirmResult = await send('CONFIRM');
 
     const res = await fetch(`${baseUrl}/sim/orders/current?phone=${encodeURIComponent(phone)}`);
@@ -210,7 +211,13 @@ describe('full order flow over HTTP', () => {
       { label: 'Skip', value: 'SKIP' },
     ]);
 
-    const billResult = await send('SKIP');
+    const paymentPromptResult = await send('SKIP');
+    expect(paymentPromptResult.quickReplies).toEqual([
+      { label: 'Cash on Delivery', value: 'COD' },
+      { label: 'UPI', value: 'UPI' },
+    ]);
+
+    const billResult = await send('COD');
     expect(billResult.quickReplies).toEqual([
       { label: 'Yes, place order', value: 'CONFIRM' },
       { label: 'No, cancel', value: 'CANCEL' },
@@ -306,5 +313,161 @@ describe('full order flow over HTTP', () => {
     expect(codesResult.replies[0]).not.toContain('WELCOME50');
     expect(codesResult.replies[0].indexOf('MEGA100')).toBeLessThan(codesResult.replies[0].indexOf('BIRYANI20'));
     expect(codesResult.replies[0].indexOf('BIRYANI20')).toBeLessThan(codesResult.replies[0].indexOf('FLAT50'));
+  });
+});
+
+describe('cart REST API (right-panel button edits, not chat messages)', () => {
+  const phone = 'whatsapp:+15551230033';
+
+  it('adds, updates, and removes a line without ever trusting client-sent price', async () => {
+    const addRes = await fetch(`${baseUrl}/sim/cart/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // A malicious/buggy client sending a fake price must not affect the bill.
+      body: JSON.stringify({ phone, restaurantId: 'r01', itemId: 'i0101', quantity: 1, unitPrice: 1 }),
+    });
+    expect(addRes.status).toBe(200);
+    const added = await addRes.json();
+    expect(added.cart).toEqual([
+      { restaurantId: 'r01', restaurantName: 'Biryani House', itemId: 'i0101', itemName: 'Veg Biryani', unitPrice: 220, quantity: 1 },
+    ]);
+    expect(added.bill.subtotal).toBe(220);
+
+    const patchRes = await fetch(`${baseUrl}/sim/cart/items`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, restaurantId: 'r01', itemId: 'i0101', quantity: 3 }),
+    });
+    const updated = await patchRes.json();
+    expect(updated.cart[0].quantity).toBe(3);
+    expect(updated.bill.subtotal).toBe(660);
+
+    const deleteRes = await fetch(`${baseUrl}/sim/cart/items`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, restaurantId: 'r01', itemId: 'i0101' }),
+    });
+    const removed = await deleteRes.json();
+    expect(removed.cart).toEqual([]);
+  });
+
+  it('adding the same dish twice merges quantity instead of duplicating the line', async () => {
+    const uniquePhone = 'whatsapp:+15551230034';
+    const add = () =>
+      fetch(`${baseUrl}/sim/cart/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: uniquePhone, restaurantId: 'r01', itemId: 'i0101', quantity: 1 }),
+      }).then((r) => r.json());
+
+    await add();
+    const second = await add();
+    expect(second.cart).toHaveLength(1);
+    expect(second.cart[0].quantity).toBe(2);
+  });
+
+  it('rejects a dish id that does not exist in the catalog', async () => {
+    const res = await fetch(`${baseUrl}/sim/cart/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: 'whatsapp:+15551230035', restaurantId: 'r01', itemId: 'not-a-real-item' }),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it('refuses to edit the cart while a real conversation step (not just a fresh search) is in progress', async () => {
+    // AWAITING_SELECTION is deliberately allowed (that's exactly the state a
+    // recommendation card's "Add to Cart" button fires from) - AWAITING_QUANTITY
+    // is a genuine mid-flow step and must still be rejected.
+    const busyPhone = 'whatsapp:+15551230036';
+    async function send(text: string) {
+      return fetch(`${baseUrl}/sim/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: busyPhone, text }),
+      });
+    }
+    await send('Masala Dosa');
+    await send('1'); // now AWAITING_QUANTITY
+
+    const res = await fetch(`${baseUrl}/sim/cart/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: busyPhone, restaurantId: 'r01', itemId: 'i0101' }),
+    });
+    expect(res.status).toBe(409);
+  });
+
+  it('allows adding from a recommendation card while AWAITING_SELECTION, and resolves the pending selection', async () => {
+    const cardPhone = 'whatsapp:+15551230038';
+    await fetch(`${baseUrl}/sim/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: cardPhone, text: 'Masala Dosa' }),
+    });
+
+    const res = await fetch(`${baseUrl}/sim/cart/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: cardPhone, restaurantId: 'r01', itemId: 'i0101' }),
+    });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.cart).toHaveLength(1);
+
+    // Typing a plain number now should not be misread as picking 1/2/3 from the old search.
+    const nextRes = await fetch(`${baseUrl}/sim/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: cardPhone, text: 'CART' }),
+    });
+    const nextData = await nextRes.json();
+    expect(nextData.replies[0]).toContain('Veg Biryani');
+  });
+
+  it('GET /sim/cart and POST /sim/cart/clear reflect the same state', async () => {
+    const clearPhone = 'whatsapp:+15551230037';
+    await fetch(`${baseUrl}/sim/cart/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: clearPhone, restaurantId: 'r01', itemId: 'i0101' }),
+    });
+
+    const getRes = await fetch(`${baseUrl}/sim/cart?phone=${encodeURIComponent(clearPhone)}`);
+    const gotten = await getRes.json();
+    expect(gotten.cart).toHaveLength(1);
+
+    const clearRes = await fetch(`${baseUrl}/sim/cart/clear`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: clearPhone }),
+    });
+    const cleared = await clearRes.json();
+    expect(cleared.cart).toEqual([]);
+  });
+});
+
+describe('GET /sim/promos', () => {
+  it('lists real promo data from the backend', async () => {
+    const res = await fetch(`${baseUrl}/sim/promos`);
+    const data = await res.json();
+    expect(data.promos.some((p: { code: string }) => p.code === 'MEGA100')).toBe(true);
+  });
+});
+
+describe('GET /sim/catalog', () => {
+  it('returns the full restaurant catalog with no query', async () => {
+    const res = await fetch(`${baseUrl}/sim/catalog`);
+    const data = await res.json();
+    expect(data.restaurants.length).toBeGreaterThan(10);
+  });
+
+  it('returns matching entries for a query', async () => {
+    const res = await fetch(`${baseUrl}/sim/catalog?q=biryani`);
+    const data = await res.json();
+    expect(data.entries.length).toBeGreaterThan(0);
+    for (const entry of data.entries) {
+      expect(entry.restaurant.rating).toBeGreaterThanOrEqual(4.0);
+    }
   });
 });

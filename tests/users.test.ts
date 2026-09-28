@@ -6,6 +6,7 @@ import {
   isPhoneTaken,
   isPlausiblePhone,
   normalizePhone,
+  updateUserPreferences,
 } from '../src/domain/users.js';
 
 describe('addUser', () => {
@@ -42,6 +43,27 @@ describe('addUser', () => {
     expect(profile.addresses).toEqual([
       { id: 'a1', label: 'Home', line: '42 Custom Lane, Pune', isDefault: true },
     ]);
+  });
+
+  it('starts every new customer with empty (not missing) preferences', async () => {
+    const profile = await addUser('Preference Test Customer');
+    expect(profile.preferences).toEqual({ cuisines: [], dietary: null, spiceLevel: null, budgetMax: null });
+  });
+});
+
+describe('updateUserPreferences', () => {
+  it('merges edits into an existing customer without clobbering untouched fields', async () => {
+    const profile = await addUser('Preference Editor');
+    const first = await updateUserPreferences(profile.phone, { dietary: 'veg' });
+    expect(first?.preferences).toMatchObject({ dietary: 'veg', cuisines: [] });
+
+    const second = await updateUserPreferences(profile.phone, { cuisines: ['italian', 'thai'] });
+    expect(second?.preferences).toMatchObject({ dietary: 'veg', cuisines: ['italian', 'thai'] });
+  });
+
+  it('returns null for a phone with no profile row', async () => {
+    const result = await updateUserPreferences('whatsapp:+910000099999', { dietary: 'vegan' });
+    expect(result).toBeNull();
   });
 });
 

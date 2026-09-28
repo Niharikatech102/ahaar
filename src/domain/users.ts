@@ -5,7 +5,11 @@ import { DATA_DIR } from '../config.js';
 import { createLogger } from '../logger.js';
 import { getDb } from '../db/client.js';
 import { users as usersTable } from '../db/schema.js';
-import type { PastOrder, UserProfile } from './types.js';
+import type { PastOrder, UserPreferences, UserProfile } from './types.js';
+
+export function defaultPreferences(): UserPreferences {
+  return { cuisines: [], dietary: null, spiceLevel: null, budgetMax: null };
+}
 
 /**
  * Normalizes a raw phone number typed into the "add customer" form into the
@@ -26,9 +30,14 @@ export function isPlausiblePhone(normalized: string): boolean {
 
 const log = createLogger('users');
 
+/** Seed fixtures predate the preferences field - fill it in for any profile that doesn't have one. */
+function withDefaultPreferences(profile: UserProfile): UserProfile {
+  return { ...profile, preferences: profile.preferences ?? defaultPreferences() };
+}
+
 function loadUsers(): UserProfile[] {
   const raw = readFileSync(path.join(DATA_DIR, 'users.json'), 'utf-8');
-  return JSON.parse(raw) as UserProfile[];
+  return (JSON.parse(raw) as UserProfile[]).map(withDefaultPreferences);
 }
 
 // Local-file fallback (used only when no DATABASE_URL is set). Once a DB is
@@ -40,7 +49,7 @@ const ADDED_USERS_FILE = path.join(DATA_DIR, 'added_users.json');
 function loadAddedUsers(): UserProfile[] {
   try {
     if (!existsSync(ADDED_USERS_FILE)) return [];
-    return JSON.parse(readFileSync(ADDED_USERS_FILE, 'utf-8')) as UserProfile[];
+    return (JSON.parse(readFileSync(ADDED_USERS_FILE, 'utf-8')) as UserProfile[]).map(withDefaultPreferences);
   } catch (err) {
     log.error('failed to load added_users.json, starting with none', err);
     return [];
@@ -63,7 +72,13 @@ function generateGuestPhone(): string {
 }
 
 function rowToProfile(row: typeof usersTable.$inferSelect): UserProfile {
-  return { phone: row.phone, name: row.name, addresses: row.addresses, orderHistory: row.orderHistory };
+  return {
+    phone: row.phone,
+    name: row.name,
+    addresses: row.addresses,
+    orderHistory: row.orderHistory,
+    preferences: row.preferences ?? defaultPreferences(),
+  };
 }
 
 export async function getAllUsers(): Promise<UserProfile[]> {
@@ -111,6 +126,7 @@ export async function addUser(name: string, phone?: string, addressLine?: string
     name,
     addresses: addressLine ? [{ id: 'a1', label: 'Home', line: addressLine, isDefault: true }] : [],
     orderHistory: [],
+    preferences: defaultPreferences(),
   };
 
   const db = getDb();
@@ -120,6 +136,7 @@ export async function addUser(name: string, phone?: string, addressLine?: string
       name: profile.name,
       addresses: profile.addresses,
       orderHistory: profile.orderHistory,
+      preferences: profile.preferences,
     });
     return profile;
   }
@@ -157,7 +174,33 @@ export async function recordOrderRatings(phone: string, pastOrders: PastOrder[])
 
 /** Cold-start profile for a phone number we have no history for - no saved address, empty history. */
 export function guestProfile(phone: string): UserProfile {
-  return { phone, name: 'Guest', addresses: [], orderHistory: [] };
+  return { phone, name: 'Guest', addresses: [], orderHistory: [], preferences: defaultPreferences() };
+}
+
+/**
+ * Merges partial preference edits (e.g. from a "My Preferences" form) into
+ * an existing customer's profile. Returns the updated profile, or null for
+ * a phone with no profile row (guests have nothing to persist preferences
+ * against).
+ */
+export async function updateUserPreferences(
+  phone: string,
+  edits: Partial<UserPreferences>,
+): Promise<UserProfile | null> {
+  const db = getDb();
+  if (db) {
+    const rows = await db.select().from(usersTable).where(eq(usersTable.phone, phone)).limit(1);
+    const existing = rows[0];
+    if (!existing) return null;
+    const merged = { ...(existing.preferences ?? defaultPreferences()), ...edits };
+    await db.update(usersTable).set({ preferences: merged }).where(eq(usersTable.phone, phone));
+    return rowToProfile({ ...existing, preferences: merged });
+  }
+
+  const target = seededUsers.find((u) => u.phone === phone) ?? addedUsers.find((u) => u.phone === phone);
+  if (!target) return null;
+  target.preferences = { ...target.preferences, ...edits };
+  return target;
 }
 
 export async function getProfileOrGuest(phone: string): Promise<UserProfile> {

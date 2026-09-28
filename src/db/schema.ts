@@ -1,6 +1,6 @@
 import { boolean, integer, jsonb, pgTable, real, text, timestamp } from 'drizzle-orm/pg-core';
-import type { Address, CatalogEntry, PastOrder, Recommendation } from '../domain/types.js';
-import type { CartItem, Order } from '../domain/order.js';
+import type { Address, CatalogEntry, PastOrder, Recommendation, UserPreferences } from '../domain/types.js';
+import type { CartItem, Order, PaymentMethod } from '../domain/order.js';
 import type { ConversationState } from '../core/session.js';
 
 export const restaurants = pgTable('restaurants', {
@@ -28,6 +28,12 @@ export const users = pgTable('users', {
   name: text('name').notNull(),
   addresses: jsonb('addresses').$type<Address[]>().notNull().default([]),
   orderHistory: jsonb('order_history').$type<PastOrder[]>().notNull().default([]),
+  preferences: jsonb('preferences').$type<UserPreferences>().notNull().default({
+    cuisines: [],
+    dietary: null,
+    spiceLevel: null,
+    budgetMax: null,
+  }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -45,6 +51,7 @@ export const sessions = pgTable('sessions', {
   address: text('address'),
   appliedPromoCode: text('applied_promo_code'),
   appliedDiscount: real('applied_discount').notNull().default(0),
+  paymentMethod: text('payment_method').$type<PaymentMethod | null>(),
   currentOrder: jsonb('current_order').$type<Order | null>(),
   pendingRatingOrderId: text('pending_rating_order_id'),
   ratingHandledForOrderId: text('rating_handled_for_order_id'),

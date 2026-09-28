@@ -13,7 +13,8 @@ interface Stage {
 const STAGES: Stage[] = [
   { status: 'CONFIRMED', afterMs: 0 },
   { status: 'PREPARING', afterMs: 15_000 },
-  { status: 'OUT_FOR_DELIVERY', afterMs: 45_000 },
+  { status: 'PICKED_UP', afterMs: 35_000 },
+  { status: 'OUT_FOR_DELIVERY', afterMs: 55_000 },
   { status: 'DELIVERED', afterMs: 90_000 },
 ];
 
@@ -33,9 +34,15 @@ export function isDelivered(order: Order, now: number): boolean {
 const STATUS_COPY: Record<OrderStatus, string> = {
   CONFIRMED: 'Order confirmed — the restaurant has received it.',
   PREPARING: 'Being prepared in the kitchen.',
+  PICKED_UP: 'Picked up by your delivery partner.',
   OUT_FOR_DELIVERY: 'Out for delivery — on its way to you!',
   DELIVERED: 'Delivered. Enjoy your meal!',
 };
+
+/** True from the moment a delivery partner has physically picked up the order. */
+export function isPartnerAssigned(status: OrderStatus): boolean {
+  return status === 'PICKED_UP' || status === 'OUT_FOR_DELIVERY' || status === 'DELIVERED';
+}
 
 export function statusMessage(status: OrderStatus): string {
   return STATUS_COPY[status];

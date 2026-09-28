@@ -1,12 +1,13 @@
 import { matchScore, searchCatalog, tokenize } from './catalog.js';
-import type { CatalogEntry, PastOrder, Recommendation } from './types.js';
+import type { CatalogEntry, PastOrder, Recommendation, UserPreferences } from './types.js';
 
 const WEIGHTS = {
-  rating: 0.3,
-  history: 0.3,
+  rating: 0.25,
+  history: 0.25,
   match: 0.2,
   eta: 0.1,
   priceFit: 0.1,
+  preference: 0.1,
 } as const;
 
 const RATING_FLOOR = 4.0;
@@ -100,7 +101,36 @@ function estimateTypicalSpend(history: PastOrder[], fallback: number): number {
   return fallback;
 }
 
-function buildReason(entry: CatalogEntry, history: HistorySignal, queryScore: number): string {
+/**
+ * How well an item matches the user's saved preferences (cuisine/dietary/
+ * spice/budget), independent of anything they've actually ordered before.
+ * 0 when no preferences are set, so profiles without any leave every
+ * candidate's ranking unchanged.
+ */
+function preferenceMatch(entry: CatalogEntry, prefs: UserPreferences | undefined): number {
+  if (!prefs) return 0;
+  const itemTags = entry.item.tags.map((t) => t.toLowerCase());
+  const cuisines = entry.restaurant.cuisines.map((c) => c.toLowerCase());
+
+  let score = 0;
+  if (prefs.cuisines.some((c) => cuisines.includes(c.toLowerCase()) || itemTags.includes(c.toLowerCase()))) {
+    score += 0.5;
+  }
+  if (prefs.dietary === 'veg' && entry.item.veg) score += 0.3;
+  if (prefs.dietary === 'non-veg' && !entry.item.veg) score += 0.3;
+  if (prefs.dietary === 'vegan' && entry.item.veg && itemTags.includes('vegan')) score += 0.3;
+  if (prefs.spiceLevel && itemTags.includes(prefs.spiceLevel)) score += 0.1;
+  if (prefs.budgetMax !== null && entry.item.price <= prefs.budgetMax) score += 0.1;
+
+  return clamp01(score);
+}
+
+function buildReason(
+  entry: CatalogEntry,
+  history: HistorySignal,
+  queryScore: number,
+  prefs: UserPreferences | undefined,
+): string {
   const parts: string[] = [];
 
   const cuisineMatch = relevantCuisineMatch(entry, history.matchedCuisines);
@@ -114,6 +144,9 @@ function buildReason(entry: CatalogEntry, history: HistorySignal, queryScore: nu
   } else if (cuisineMatch) {
     parts.push(`matches your usual ${cuisineMatch} orders`);
   }
+
+  if (prefs?.dietary === 'veg' && entry.item.veg) parts.push('matches your vegetarian preference');
+  if (prefs?.budgetMax != null && entry.item.price <= prefs.budgetMax) parts.push('within your budget');
 
   parts.push(`${entry.restaurant.rating.toFixed(1)}\u2605`);
   parts.push(`${entry.restaurant.etaMinutes} min`);
@@ -131,6 +164,8 @@ export interface RecommendOptions {
   limit?: number;
   /** Average order value, used as the anchor for the price-fit signal. Defaults to a mid-range estimate. */
   fallbackTypicalSpend?: number;
+  /** The user's saved food preferences, if any - an additional scoring signal layered on top of history. */
+  preferences?: UserPreferences;
 }
 
 /**
@@ -157,15 +192,17 @@ export function recommend(
     const rating = normalizeRating(entry.restaurant.rating);
     const eta = normalizeEta(entry.restaurant.etaMinutes);
     const price = priceFit(entry.item.price, typicalSpend);
+    const preference = preferenceMatch(entry, options.preferences);
 
     const score =
       WEIGHTS.rating * rating +
       WEIGHTS.history * hist.score +
       WEIGHTS.match * qScore +
       WEIGHTS.eta * eta +
-      WEIGHTS.priceFit * price;
+      WEIGHTS.priceFit * price +
+      WEIGHTS.preference * preference;
 
-    return { entry, score, reason: buildReason(entry, hist, qScore) };
+    return { entry, score, reason: buildReason(entry, hist, qScore, options.preferences) };
   });
 
   scored.sort((a, b) => b.score - a.score);
@@ -182,4 +219,41 @@ export function recommend(
   }
 
   return diverse;
+}
+
+export interface UsualOrder {
+  restaurantId: string;
+  itemId: string;
+  timesOrdered: number;
+}
+
+/**
+ * The user's most-frequently-ordered dish - deliberately not just their most
+ * recent one, since "my usual" means a real habit, not whatever they happened
+ * to get last time. Ties broken by recency (the more recently-repeated habit
+ * wins). Null if there's no history to work from.
+ */
+export function getUsualOrder(history: PastOrder[]): UsualOrder | null {
+  if (history.length === 0) return null;
+
+  const counts = new Map<string, { restaurantId: string; itemId: string; count: number; minDaysAgo: number }>();
+  for (const order of history) {
+    const key = `${order.restaurantId}::${order.itemId}`;
+    const existing = counts.get(key);
+    if (existing) {
+      existing.count += 1;
+      existing.minDaysAgo = Math.min(existing.minDaysAgo, order.daysAgo);
+    } else {
+      counts.set(key, { restaurantId: order.restaurantId, itemId: order.itemId, count: 1, minDaysAgo: order.daysAgo });
+    }
+  }
+
+  let best: { restaurantId: string; itemId: string; count: number; minDaysAgo: number } | null = null;
+  for (const candidate of counts.values()) {
+    if (!best || candidate.count > best.count || (candidate.count === best.count && candidate.minDaysAgo < best.minDaysAgo)) {
+      best = candidate;
+    }
+  }
+
+  return best && { restaurantId: best.restaurantId, itemId: best.itemId, timesOrdered: best.count };
 }

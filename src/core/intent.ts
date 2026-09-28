@@ -1,12 +1,14 @@
 export type GlobalCommand =
   | 'MENU' | 'HELP' | 'STATUS' | 'CANCEL' | 'REORDER'
   | 'CART' | 'VIEW CART' | 'SHOW CART' | 'MY CART'
-  | 'CHECKOUT' | 'CLEAR CART' | 'EMPTY CART';
+  | 'CHECKOUT' | 'CLEAR CART' | 'EMPTY CART'
+  | 'MY USUAL' | 'USUAL' | 'ORDER MY USUAL';
 
 const GLOBAL_COMMANDS: GlobalCommand[] = [
   'MENU', 'HELP', 'STATUS', 'CANCEL', 'REORDER',
   'CART', 'VIEW CART', 'SHOW CART', 'MY CART',
   'CHECKOUT', 'CLEAR CART', 'EMPTY CART',
+  'MY USUAL', 'USUAL', 'ORDER MY USUAL',
 ];
 
 export function parseGlobalCommand(text: string): GlobalCommand | null {
@@ -89,6 +91,21 @@ export function parseQuantityUpdateCommand(text: string): QuantityUpdateCommand 
   const quantity = parseWordOrDigitNumber(match[2] ?? '');
   if (quantity === null) return null;
   return { target: match[1]?.trim() || 'that', quantity };
+}
+
+// Loose enough to catch real phrasing variance ("apply the best discount",
+// "what's the best deal", "give me the biggest offer") without needing the
+// LLM - a user rarely says exactly "BEST DISCOUNT" and nothing else.
+const BEST_DISCOUNT_PATTERN = /\b(?:best|biggest|maximum|highest)\s+(?:discount|deal|offer|promo|savings?)\b/i;
+
+export function isBestDiscountRequest(text: string): boolean {
+  return BEST_DISCOUNT_PATTERN.test(text.trim());
+}
+
+const TOTAL_REQUEST_PATTERN = /^(?:what'?s?\s+(?:is\s+)?)?my\s+total\??$|^total\??$|^what'?s?\s+the\s+total\??$/i;
+
+export function isTotalRequest(text: string): boolean {
+  return TOTAL_REQUEST_PATTERN.test(text.trim());
 }
 
 export interface ParsedQuery {

@@ -1,7 +1,7 @@
 import type { Bill, CartItem, Order, OrderStatus } from '../domain/order.js';
 import type { Promo } from '../domain/types.js';
 import type { Recommendation } from '../domain/types.js';
-import { deliveryPartnerFor, statusMessage } from '../domain/delivery.js';
+import { deliveryPartnerFor, isPartnerAssigned, statusMessage } from '../domain/delivery.js';
 
 const HELP_TEXT = [
   '*How this works*',
@@ -12,11 +12,14 @@ const HELP_TEXT = [
   '*REMOVE <dish>* — take a dish out of your cart',
   '*MAKE <dish> <qty>* — change a cart item\'s quantity, e.g. "make coffee two"',
   '*CART* — see what\'s in your cart',
+  '*MY TOTAL* — see your running total, including any discount applied so far',
   '*CHECKOUT* — pay for what\'s in your cart',
   '*CLEAR CART* — empty your cart',
   '*MENU* — start a fresh search',
   '*STATUS* — check your current order',
   '*REORDER* — add your whole last order back to your cart',
+  '*MY USUAL* — add your most-frequently-ordered dish to your cart',
+  '*BEST DISCOUNT* — apply the biggest promo you\'re eligible for (while choosing a promo)',
   '*CANCEL* — abort what you are doing',
   '*HELP* — show this message',
 ].join('\n');
@@ -158,7 +161,20 @@ function billLines(bill: Bill): string[] {
   return lines;
 }
 
-export function billMessage(cart: CartItem[], bill: Bill, address: string): string {
+const PAYMENT_METHOD_LABEL: Record<'COD' | 'UPI', string> = {
+  COD: 'Cash on Delivery',
+  UPI: 'UPI',
+};
+
+export function paymentMethodPromptMessage(): string {
+  return 'How would you like to pay? Reply *COD* for Cash on Delivery, or *UPI*.';
+}
+
+export function invalidPaymentMethodMessage(): string {
+  return 'Reply *COD* for Cash on Delivery, or *UPI*.';
+}
+
+export function billMessage(cart: CartItem[], bill: Bill, address: string, paymentMethod: 'COD' | 'UPI'): string {
   return [
     '*Order summary*',
     restaurantNames(cart).join(' + '),
@@ -168,6 +184,7 @@ export function billMessage(cart: CartItem[], bill: Bill, address: string): stri
     ...billLines(bill),
     '',
     `Deliver to: ${address}`,
+    `Payment: ${PAYMENT_METHOD_LABEL[paymentMethod]}`,
     '',
     'Reply *CONFIRM* to place the order, or *CANCEL* to abort.',
   ].join('\n');
@@ -188,6 +205,15 @@ export function cartMessage(cart: CartItem[]): string {
     `Subtotal: ₹${subtotal}`,
     '',
     'Type *CHECKOUT* to pay, *ADD <dish>*/*REMOVE <dish>* to keep editing, or *CLEAR CART* to start over.',
+  ].join('\n');
+}
+
+export function totalMessage(cart: CartItem[], bill: Bill): string {
+  return [
+    '*Your total so far*',
+    ...cartLineDescriptions(cart),
+    `Subtotal: ₹${bill.subtotal}`,
+    ...billLines(bill),
   ].join('\n');
 }
 
@@ -238,13 +264,14 @@ export function orderPlacedMessage(order: Order): string {
     `Order placed! *${order.id}*`,
     statusMessage('CONFIRMED'),
     `Estimated delivery: ~${order.restaurantEtaMinutes} min.`,
+    `Payment: ${PAYMENT_METHOD_LABEL[order.paymentMethod]}.`,
     'Type *STATUS* anytime to check progress.',
   ].join('\n');
 }
 
 export function statusUpdateMessage(order: Order, status: OrderStatus): string {
   const lines = [`*${order.id}*`, statusMessage(status)];
-  if (status === 'OUT_FOR_DELIVERY' || status === 'DELIVERED') {
+  if (isPartnerAssigned(status)) {
     const partner = deliveryPartnerFor(order.id);
     lines.push(`Delivery partner: ${partner.name} (${partner.vehicle})`);
   }
@@ -298,6 +325,19 @@ export function reorderAddedMessage(cart: CartItem[], addedCount: number, skippe
   lines.push(`Cart: ${cart.length} item${cart.length === 1 ? '' : 's'}, ₹${subtotal}.`);
   lines.push('Keep adding dishes, or type *CHECKOUT* when you\'re ready.');
   return lines.join('\n');
+}
+
+export function noUsualOrderMessage(): string {
+  return "You don't have enough order history yet for me to know your usual. Tell me what you're craving.";
+}
+
+export function usualAddedMessage(line: CartItem, timesOrdered: number, cart: CartItem[]): string {
+  const subtotal = cart.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
+  return [
+    `Your usual is *${line.itemName}* from ${line.restaurantName} — you've ordered it ${timesOrdered}x before. Added it to your cart.`,
+    `Cart: ${cart.length} item${cart.length === 1 ? '' : 's'}, ₹${subtotal}.`,
+    'Keep adding dishes, or type *CHECKOUT* when you\'re ready.',
+  ].join('\n');
 }
 
 export function fallbackMessage(): string {

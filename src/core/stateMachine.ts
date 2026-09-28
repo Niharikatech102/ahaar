@@ -1,10 +1,12 @@
-import { recommend } from '../domain/recommender.js';
+import { getUsualOrder, recommend } from '../domain/recommender.js';
 import { applicablePromos, bestApplicablePromo, evaluatePromo, getPromoByCode } from '../domain/promos.js';
 import { computeBill, generateOrderId, type CartItem, type Order } from '../domain/order.js';
 import { statusAt } from '../domain/delivery.js';
 import { getItemById, getRestaurantById } from '../domain/catalog.js';
 import type { PastOrder, UserProfile } from '../domain/types.js';
 import {
+  isBestDiscountRequest,
+  isTotalRequest,
   parseAddCommand,
   parseGlobalCommand,
   parseQuantity,
@@ -108,7 +110,7 @@ function cartLineFromSelection(selected: NonNullable<Session['selected']>, quant
 }
 
 /** Adds a line to the cart, merging into an existing line for the same dish rather than duplicating it. */
-function addLineToCart(cart: CartItem[], line: CartItem): CartItem[] {
+export function addLineToCart(cart: CartItem[], line: CartItem): CartItem[] {
   const idx = cart.findIndex((l) => l.restaurantId === line.restaurantId && l.itemId === line.itemId);
   if (idx === -1) return [...cart, line];
   const merged = [...cart];
@@ -153,6 +155,7 @@ function handleIdle(session: Session, text: string, ctx: Ctx): StepResult {
   const recs = recommend(query.raw, ctx.profile.orderHistory, {
     vegOnly: query.vegOnly,
     maxPrice: query.maxPrice,
+    preferences: ctx.profile.preferences,
   });
 
   if (recs.length === 0) {
@@ -220,7 +223,7 @@ function handleAddCommand(session: Session, query: string, ctx: Ctx): StepResult
     return { session, replies: [msg.cartBusyMessage()] };
   }
 
-  const recs = recommend(query, ctx.profile.orderHistory, {});
+  const recs = recommend(query, ctx.profile.orderHistory, { preferences: ctx.profile.preferences });
   if (recs.length === 0) {
     return { session, replies: [msg.addItemNotFoundMessage(query)] };
   }
@@ -280,6 +283,15 @@ function handleQuantityUpdateCommand(session: Session, target: string, quantity:
 
 function handleViewCart(session: Session): StepResult {
   return { session, replies: [msg.cartMessage(session.cart)] };
+}
+
+/** "What's my total?" - works in any state, using whatever discount has already been applied so far. */
+function handleTotal(session: Session): StepResult {
+  if (session.cart.length === 0) {
+    return { session, replies: [msg.emptyCartMessage()] };
+  }
+  const bill = computeBill(session.cart, session.appliedDiscount, session.appliedPromoCode);
+  return { session, replies: [msg.totalMessage(session.cart, bill)] };
 }
 
 function handleClearCart(session: Session, ctx: Ctx): StepResult {
@@ -349,22 +361,53 @@ function handleAwaitingAddress(session: Session, text: string, ctx: Ctx): StepRe
   };
 }
 
-function moveToConfirm(session: Session, ctx: Ctx, code: string | null, discount: number): StepResult {
+function paymentQuickReplies(): QuickReply[] {
+  return [
+    { label: 'Cash on Delivery', value: 'COD' },
+    { label: 'UPI', value: 'UPI' },
+  ];
+}
+
+/** Promo resolution is done; ask how they want to pay before showing the final bill. */
+function moveToPayment(session: Session, ctx: Ctx, code: string | null, discount: number): StepResult {
   if (session.cart.length === 0 || !session.address) {
     return { session: resetToIdle(session, ctx.now), replies: [msg.fallbackMessage()] };
   }
 
-  const bill = computeBill(session.cart, discount, code);
   const next: Session = {
     ...session,
-    state: 'AWAITING_CONFIRM',
+    state: 'AWAITING_PAYMENT',
     appliedPromoCode: code,
     appliedDiscount: discount,
     updatedAt: ctx.now,
   };
   return {
     session: next,
-    replies: [msg.billMessage(session.cart, bill, session.address)],
+    replies: [msg.paymentMethodPromptMessage()],
+    quickReplies: paymentQuickReplies(),
+  };
+}
+
+function handleAwaitingPayment(session: Session, text: string, ctx: Ctx): StepResult {
+  const trimmed = text.trim();
+  const method = isWord(trimmed, 'COD') ? 'COD' : isWord(trimmed, 'UPI') ? 'UPI' : null;
+  if (!method) {
+    return { session, replies: [msg.invalidPaymentMethodMessage()], quickReplies: paymentQuickReplies() };
+  }
+  if (session.cart.length === 0 || !session.address) {
+    return { session: resetToIdle(session, ctx.now), replies: [msg.fallbackMessage()] };
+  }
+
+  const bill = computeBill(session.cart, session.appliedDiscount, session.appliedPromoCode);
+  const next: Session = {
+    ...session,
+    state: 'AWAITING_CONFIRM',
+    paymentMethod: method,
+    updatedAt: ctx.now,
+  };
+  return {
+    session: next,
+    replies: [msg.billMessage(session.cart, bill, session.address, method)],
     quickReplies: confirmQuickReplies(),
   };
 }
@@ -372,7 +415,7 @@ function moveToConfirm(session: Session, ctx: Ctx, code: string | null, discount
 function handleAwaitingPromo(session: Session, text: string, ctx: Ctx): StepResult {
   const trimmed = text.trim();
   if (isWord(trimmed, 'SKIP')) {
-    return moveToConfirm(session, ctx, null, 0);
+    return moveToPayment(session, ctx, null, 0);
   }
 
   if (session.cart.length === 0) {
@@ -398,19 +441,21 @@ function handleAwaitingPromo(session: Session, text: string, ctx: Ctx): StepResu
     };
   }
 
-  if (isWord(trimmed, 'APPLY')) {
+  const wantsBestDiscount = isWord(trimmed, 'APPLY') || isBestDiscountRequest(trimmed);
+
+  if (wantsBestDiscount) {
     const suggestion = bestApplicablePromo(orderContext);
     if (!suggestion) {
       return { session, replies: [msg.promoPromptMessage(null)], quickReplies: promoQuickReplies(null) };
     }
     const replies = [msg.promoAppliedMessage(suggestion.promo.code, suggestion.result.discount)];
-    const { session: nextSession, replies: billReplies, quickReplies } = moveToConfirm(
+    const { session: nextSession, replies: paymentReplies, quickReplies } = moveToPayment(
       session,
       ctx,
       suggestion.promo.code,
       suggestion.result.discount,
     );
-    return { session: nextSession, replies: [...replies, ...billReplies], quickReplies };
+    return { session: nextSession, replies: [...replies, ...paymentReplies], quickReplies };
   }
 
   const promo = getPromoByCode(trimmed);
@@ -432,13 +477,13 @@ function handleAwaitingPromo(session: Session, text: string, ctx: Ctx): StepResu
   }
 
   const replies = [msg.promoAppliedMessage(promo.code, result.discount)];
-  const { session: nextSession, replies: billReplies, quickReplies } = moveToConfirm(
+  const { session: nextSession, replies: paymentReplies, quickReplies } = moveToPayment(
     session,
     ctx,
     promo.code,
     result.discount,
   );
-  return { session: nextSession, replies: [...replies, ...billReplies], quickReplies };
+  return { session: nextSession, replies: [...replies, ...paymentReplies], quickReplies };
 }
 
 function handleAwaitingConfirm(session: Session, text: string, ctx: Ctx): StepResult {
@@ -450,7 +495,7 @@ function handleAwaitingConfirm(session: Session, text: string, ctx: Ctx): StepRe
     };
   }
 
-  if (session.cart.length === 0 || !session.address) {
+  if (session.cart.length === 0 || !session.address || !session.paymentMethod) {
     return { session: resetToIdle(session, ctx.now), replies: [msg.fallbackMessage()] };
   }
 
@@ -462,6 +507,7 @@ function handleAwaitingConfirm(session: Session, text: string, ctx: Ctx): StepRe
     cart: session.cart,
     bill,
     address: session.address,
+    paymentMethod: session.paymentMethod,
     placedAt: ctx.now,
     restaurantEtaMinutes: cartEtaMinutes(session.cart),
   };
@@ -502,12 +548,46 @@ function handleReorder(session: Session, ctx: Ctx): StepResult {
   return { session: next, replies: [msg.reorderAddedMessage(nextCart, addedCount, skippedNames)] };
 }
 
+/**
+ * "My usual" - the user's most-frequently-ordered dish, computed from real
+ * order history (not simply their last order, which REORDER already covers).
+ */
+function handleMyUsual(session: Session, ctx: Ctx): StepResult {
+  if (session.state !== 'IDLE') {
+    return { session, replies: [msg.cartBusyMessage()] };
+  }
+
+  const usual = getUsualOrder(ctx.profile.orderHistory);
+  if (!usual) {
+    return { session, replies: [msg.noUsualOrderMessage()] };
+  }
+
+  const restaurant = getRestaurantById(usual.restaurantId);
+  const item = restaurant && getItemById(restaurant.id, usual.itemId);
+  if (!restaurant || !item) {
+    return { session, replies: [msg.reorderNothingAvailableMessage()] };
+  }
+
+  const line: CartItem = {
+    restaurantId: restaurant.id,
+    restaurantName: restaurant.name,
+    itemId: item.id,
+    itemName: item.name,
+    unitPrice: item.price,
+    quantity: 1,
+  };
+  const nextCart = addLineToCart(session.cart, line);
+  const next: Session = { ...session, cart: nextCart, updatedAt: ctx.now };
+  return { session: next, replies: [msg.usualAddedMessage(line, usual.timesOrdered, nextCart)] };
+}
+
 const STATE_HANDLERS: Record<Session['state'], (session: Session, text: string, ctx: Ctx) => StepResult> = {
   IDLE: handleIdle,
   AWAITING_SELECTION: handleAwaitingSelection,
   AWAITING_QUANTITY: handleAwaitingQuantity,
   AWAITING_ADDRESS: handleAwaitingAddress,
   AWAITING_PROMO: handleAwaitingPromo,
+  AWAITING_PAYMENT: handleAwaitingPayment,
   AWAITING_CONFIRM: handleAwaitingConfirm,
 };
 
@@ -570,6 +650,10 @@ export function handleMessage(session: Session, text: string, ctx: Ctx): StepRes
     return handleReorder(session, ctx);
   }
 
+  if (command === 'MY USUAL' || command === 'USUAL' || command === 'ORDER MY USUAL') {
+    return handleMyUsual(session, ctx);
+  }
+
   if (command === 'CART' || command === 'VIEW CART' || command === 'SHOW CART' || command === 'MY CART') {
     return handleViewCart(session);
   }
@@ -580,6 +664,10 @@ export function handleMessage(session: Session, text: string, ctx: Ctx): StepRes
 
   if (command === 'CLEAR CART' || command === 'EMPTY CART') {
     return handleClearCart(session, ctx);
+  }
+
+  if (isTotalRequest(text)) {
+    return handleTotal(session);
   }
 
   const addQuery = parseAddCommand(text);

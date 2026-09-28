@@ -41,7 +41,10 @@ export function computeBill(cart: CartItem[], discount = 0, promoCode: string | 
   };
 }
 
-export type OrderStatus = 'CONFIRMED' | 'PREPARING' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
+export type OrderStatus = 'CONFIRMED' | 'PREPARING' | 'PICKED_UP' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
+
+/** Demo-only - no real payment integration, just how the order is represented as paid for. */
+export type PaymentMethod = 'COD' | 'UPI';
 
 export interface Order {
   id: string;
@@ -49,6 +52,7 @@ export interface Order {
   cart: CartItem[];
   bill: Bill;
   address: string;
+  paymentMethod: PaymentMethod;
   placedAt: number;
   /** Slowest ETA across every restaurant represented in the cart. */
   restaurantEtaMinutes: number;

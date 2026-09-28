@@ -39,11 +39,21 @@ export interface Address {
   isDefault: boolean;
 }
 
+export interface UserPreferences {
+  /** Cuisine names the user likes, e.g. ["italian", "thai"] - matched against a dish's restaurant cuisines and its own tags. */
+  cuisines: string[];
+  dietary: 'veg' | 'non-veg' | 'vegan' | null;
+  spiceLevel: 'mild' | 'medium' | 'spicy' | null;
+  /** Soft ceiling on what the user typically wants to spend per dish. */
+  budgetMax: number | null;
+}
+
 export interface UserProfile {
   phone: string;
   name: string;
   addresses: Address[];
   orderHistory: PastOrder[];
+  preferences: UserPreferences;
 }
 
 export type PromoType = 'percent' | 'flat';

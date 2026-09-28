@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { recommend } from '../src/domain/recommender.js';
-import type { PastOrder } from '../src/domain/types.js';
+import { getUsualOrder, recommend } from '../src/domain/recommender.js';
+import type { PastOrder, UserPreferences } from '../src/domain/types.js';
 
 const aryanHistory: PastOrder[] = [
   { restaurantId: 'r01', itemId: 'i0101', cuisine: 'biryani', daysAgo: 4, rating: 5 },
@@ -87,5 +87,59 @@ describe('recommend', () => {
     }
     expect(results.some((r) => r.entry.item.name === 'Margherita Pizza')).toBe(false);
     expect(results.some((r) => r.entry.item.name === 'Paneer Biryani')).toBe(false);
+  });
+
+  describe('preferences signal', () => {
+    const prefs: UserPreferences = { cuisines: [], dietary: 'veg', spiceLevel: null, budgetMax: 300 };
+
+    it('does not change behavior when no preferences are set', () => {
+      const withoutPrefs = recommend('veg biryani', aryanHistory);
+      const withEmptyPrefs = recommend('veg biryani', aryanHistory, {
+        preferences: { cuisines: [], dietary: null, spiceLevel: null, budgetMax: null },
+      });
+      expect(withEmptyPrefs.map((r) => r.entry.item.id)).toEqual(withoutPrefs.map((r) => r.entry.item.id));
+    });
+
+    it('mentions the vegetarian preference in the reason for a veg match', () => {
+      const results = recommend('veg biryani', [], { preferences: prefs });
+      const vegHit = results.find((r) => r.entry.item.veg);
+      expect(vegHit).toBeDefined();
+      expect(vegHit!.reason).toContain('vegetarian preference');
+    });
+
+    it('mentions being within budget when the price qualifies', () => {
+      const results = recommend('veg biryani', [], { preferences: prefs });
+      const withinBudget = results.find((r) => r.entry.item.price <= 300);
+      expect(withinBudget).toBeDefined();
+      expect(withinBudget!.reason).toContain('within your budget');
+    });
+  });
+});
+
+describe('getUsualOrder', () => {
+  it('returns null when there is no history', () => {
+    expect(getUsualOrder([])).toBeNull();
+  });
+
+  it('picks the most-frequently-ordered dish, not simply the most recent one', () => {
+    const history: PastOrder[] = [
+      { restaurantId: 'r01', itemId: 'i0101', cuisine: 'biryani', daysAgo: 60, rating: 5 },
+      { restaurantId: 'r01', itemId: 'i0101', cuisine: 'biryani', daysAgo: 30, rating: 5 },
+      { restaurantId: 'r01', itemId: 'i0101', cuisine: 'biryani', daysAgo: 10, rating: 4 },
+      { restaurantId: 'r07', itemId: 'i0701', cuisine: 'italian', daysAgo: 1, rating: 5 }, // ordered most recently, but only once
+    ];
+    const usual = getUsualOrder(history);
+    expect(usual).toEqual({ restaurantId: 'r01', itemId: 'i0101', timesOrdered: 3 });
+  });
+
+  it('breaks a tie in frequency by whichever was ordered more recently', () => {
+    const history: PastOrder[] = [
+      { restaurantId: 'r01', itemId: 'i0101', cuisine: 'biryani', daysAgo: 50, rating: 5 },
+      { restaurantId: 'r01', itemId: 'i0101', cuisine: 'biryani', daysAgo: 20, rating: 5 },
+      { restaurantId: 'r07', itemId: 'i0701', cuisine: 'italian', daysAgo: 40, rating: 5 },
+      { restaurantId: 'r07', itemId: 'i0701', cuisine: 'italian', daysAgo: 2, rating: 5 },
+    ];
+    const usual = getUsualOrder(history);
+    expect(usual).toEqual({ restaurantId: 'r07', itemId: 'i0701', timesOrdered: 2 });
   });
 });
