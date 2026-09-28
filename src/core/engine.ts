@@ -1,6 +1,6 @@
-import { getProfileOrGuest, recordOrderRating } from '../domain/users.js';
+import { getProfileOrGuest, recordOrderRatings } from '../domain/users.js';
 import { handleMessage, type QuickReply } from './stateMachine.js';
-import { parseGlobalCommand, parseSelection } from './intent.js';
+import { parseAddCommand, parseGlobalCommand, parseQuantityUpdateCommand, parseRemoveCommand, parseSelection } from './intent.js';
 import { parseQueryWithLLM } from './llmIntent.js';
 import type { SessionStore } from './session.js';
 
@@ -47,19 +47,25 @@ export async function processMessage(
   // for a case that's actually a fresh search by the time it reaches there.
   const isRetypedSearchDuringSelection =
     session.state === 'AWAITING_SELECTION' && parseSelection(text) === null;
+  // ADD/REMOVE/"make X Y" are handled by their own regex parsers in
+  // stateMachine.ts, not the search path - skip the LLM call for them so we
+  // don't burn a request on a query it never even gets asked to use.
+  const isCartMutationCommand =
+    parseAddCommand(text) !== null || parseRemoveCommand(text) !== null || parseQuantityUpdateCommand(text) !== null;
   const isFreshSearch =
     text.trim() !== '' &&
     parseGlobalCommand(text) === null &&
+    !isCartMutationCommand &&
     (session.state === 'IDLE' || isRetypedSearchDuringSelection);
   const parsedQueryOverride = isFreshSearch ? (await parseQueryWithLLM(text)) ?? undefined : undefined;
 
-  const { session: nextSession, replies, quickReplies, ratingToRecord } = handleMessage(session, text, {
+  const { session: nextSession, replies, quickReplies, ratingsToRecord } = handleMessage(session, text, {
     profile,
     now,
     parsedQueryOverride,
   });
   await store.set(nextSession);
-  if (ratingToRecord) await recordOrderRating(phone, ratingToRecord);
+  if (ratingsToRecord && ratingsToRecord.length > 0) await recordOrderRatings(phone, ratingsToRecord);
   return {
     replies,
     orderId: nextSession.currentOrder?.id ?? null,

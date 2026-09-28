@@ -25,7 +25,7 @@ function step(session: Session, text: string, now: number) {
   return handleMessage(session, text, ctxAt(now));
 }
 
-describe('full ordering flow: search -> select -> quantity -> address -> promo -> confirm', () => {
+describe('full ordering flow: search -> select -> quantity -> cart -> checkout -> address -> promo -> confirm', () => {
   it('walks a happy-path transcript through to a placed order', () => {
     let session = freshSession(PHONE, NOW_0);
 
@@ -42,40 +42,48 @@ describe('full ordering flow: search -> select -> quantity -> address -> promo -
     expect(session.state).toBe('AWAITING_QUANTITY');
     expect(session.selected?.item.name).toBe(session.shownRecommendations[0]!.entry.item.name);
 
-    // 3. Quantity
+    // 3. Quantity - this now adds the item to the cart and returns to IDLE, not straight to checkout
     result = step(session, '2', NOW_0 + 2000);
     session = result.session;
+    expect(session.state).toBe('IDLE');
+    expect(session.cart).toHaveLength(1);
+    expect(session.cart[0]!.quantity).toBe(2);
+    expect(result.replies[0]).toContain('Added');
+
+    // 4. Checkout
+    result = step(session, 'CHECKOUT', NOW_0 + 2500);
+    session = result.session;
     expect(session.state).toBe('AWAITING_ADDRESS');
-    expect(session.quantity).toBe(2);
     expect(result.replies[0]).toContain('12 MG Road');
 
-    // 4. Confirm default address
+    // 5. Confirm default address
     result = step(session, 'YES', NOW_0 + 3000);
     session = result.session;
     expect(session.state).toBe('AWAITING_PROMO');
     expect(session.address).toBe('12 MG Road, Bengaluru 560001');
 
-    // 5. Skip promo
+    // 6. Skip promo
     result = step(session, 'SKIP', NOW_0 + 4000);
     session = result.session;
     expect(session.state).toBe('AWAITING_CONFIRM');
     expect(result.replies[0]).toContain('Total: ₹');
     expect(session.appliedPromoCode).toBeNull();
 
-    // 6. Confirm order
+    // 7. Confirm order
     result = step(session, 'CONFIRM', NOW_0 + 5000);
     session = result.session;
     expect(session.state).toBe('IDLE');
+    expect(session.cart).toHaveLength(0); // cart is consumed into the order
     expect(session.currentOrder).not.toBeNull();
     expect(session.currentOrder?.id).toBe('ORD-TEST-0001');
     expect(result.replies[0]).toContain('Order placed');
 
-    // 7. Immediately after placing, status is CONFIRMED
+    // 8. Immediately after placing, status is CONFIRMED
     result = step(session, 'STATUS', NOW_0 + 5500);
     session = result.session;
     expect(result.replies[0]).toContain('confirmed');
 
-    // 8. Later, status progresses toward delivery
+    // 9. Later, status progresses toward delivery
     const laterStatus = statusAt(session.currentOrder!.placedAt, NOW_0 + 5000 + 50_000);
     expect(laterStatus).toBe('OUT_FOR_DELIVERY');
   });
@@ -85,6 +93,7 @@ describe('full ordering flow: search -> select -> quantity -> address -> promo -
     session = step(session, 'Veg Biryani', NOW_0).session;
     session = step(session, '1', NOW_0).session;
     session = step(session, '3', NOW_0).session; // qty 3, pushes subtotal well above promo thresholds
+    session = step(session, 'CHECKOUT', NOW_0).session;
     session = step(session, 'YES', NOW_0).session;
 
     const promoResult = step(session, 'BIRYANI20', NOW_0);
@@ -100,6 +109,7 @@ describe('full ordering flow: search -> select -> quantity -> address -> promo -
     session = step(session, 'Veg Biryani', NOW_0).session;
     session = step(session, '1', NOW_0).session;
     session = step(session, '1', NOW_0).session;
+    session = step(session, 'CHECKOUT', NOW_0).session;
     session = step(session, 'YES', NOW_0).session;
 
     const result = step(session, 'NOTAREALCODE', NOW_0);
@@ -109,7 +119,7 @@ describe('full ordering flow: search -> select -> quantity -> address -> promo -
 });
 
 describe('global commands work in every state', () => {
-  it('CANCEL resets an in-progress order back to IDLE', () => {
+  it('CANCEL resets an in-progress selection back to IDLE without touching the cart', () => {
     let session = freshSession(PHONE, NOW_0);
     session = step(session, 'Veg Biryani', NOW_0).session;
     session = step(session, '1', NOW_0).session;
@@ -118,6 +128,7 @@ describe('global commands work in every state', () => {
     const result = step(session, 'CANCEL', NOW_0);
     expect(result.session.state).toBe('IDLE');
     expect(result.session.selected).toBeNull();
+    expect(result.session.cart).toEqual([]);
   });
 
   it('CANCEL with nothing in progress says so without erroring', () => {
@@ -202,6 +213,11 @@ describe('cold-start user with no saved address and no history', () => {
     session = result.session;
     result = handleMessage(session, '1', ctx);
     session = result.session;
+    expect(session.state).toBe('IDLE');
+    expect(session.cart).toHaveLength(1);
+
+    result = handleMessage(session, 'CHECKOUT', ctx);
+    session = result.session;
     expect(session.state).toBe('AWAITING_ADDRESS');
     expect(result.replies[0]).not.toContain('Deliver to:');
 
@@ -219,16 +235,102 @@ describe('cold-start user with no saved address and no history', () => {
   });
 });
 
-/** Runs a full search -> select -> quantity -> address -> skip promo -> confirm flow, returning the resulting session. */
+/** Runs a full search -> select -> quantity -> checkout -> address -> skip promo -> confirm flow for one dish, returning the resulting session. */
 function placeOrder(now: number): Session {
   let session = freshSession(PHONE, now);
   session = step(session, 'Veg Biryani', now).session;
   session = step(session, '1', now).session;
   session = step(session, '1', now).session;
+  session = step(session, 'CHECKOUT', now).session;
   session = step(session, 'YES', now).session;
   session = step(session, 'SKIP', now).session;
   return step(session, 'CONFIRM', now).session;
 }
+
+describe('multi-item cart', () => {
+  it('Phase 1 acceptance scenario: add, add, change quantity, remove leaves only what should remain', () => {
+    let session = freshSession(PHONE, NOW_0);
+
+    let result = step(session, 'Add pizza.', NOW_0);
+    session = result.session;
+    expect(session.cart).toHaveLength(1);
+    const pizzaName = session.cart[0]!.itemName;
+    expect(pizzaName.toLowerCase()).toContain('pizza');
+
+    result = step(session, 'Add coffee.', NOW_0 + 1000);
+    session = result.session;
+    expect(session.cart).toHaveLength(2);
+    const coffeeName = session.cart[1]!.itemName;
+    expect(coffeeName.toLowerCase()).toContain('coffee');
+
+    result = step(session, 'Make the coffee two.', NOW_0 + 2000);
+    session = result.session;
+    expect(session.cart.find((l) => l.itemName === coffeeName)?.quantity).toBe(2);
+
+    result = step(session, 'Remove pizza.', NOW_0 + 3000);
+    session = result.session;
+    expect(session.cart).toHaveLength(1);
+    expect(session.cart[0]!.itemName).toBe(coffeeName);
+    expect(session.cart[0]!.quantity).toBe(2);
+
+    // Placing the order carries every remaining cart line through, and only those.
+    result = step(session, 'CHECKOUT', NOW_0 + 4000);
+    session = result.session;
+    result = step(session, '42 Test Lane', NOW_0 + 4500);
+    session = result.session;
+    result = step(session, 'SKIP', NOW_0 + 5000);
+    session = result.session;
+    result = step(session, 'CONFIRM', NOW_0 + 5500);
+    session = result.session;
+    expect(session.currentOrder?.cart).toHaveLength(1);
+    expect(session.currentOrder?.cart[0]?.itemName).toBe(coffeeName);
+    expect(session.currentOrder?.cart[0]?.quantity).toBe(2);
+  });
+
+  it('merges adding the same dish twice into one line instead of duplicating it', () => {
+    let session = freshSession(PHONE, NOW_0);
+    session = step(session, 'Add Veg Biryani', NOW_0).session;
+    session = step(session, 'Add Veg Biryani', NOW_0 + 1000).session;
+    expect(session.cart).toHaveLength(1);
+    expect(session.cart[0]!.quantity).toBe(2);
+  });
+
+  it('CART shows contents and total; CLEAR CART empties it', () => {
+    let session = freshSession(PHONE, NOW_0);
+    session = step(session, 'Add Veg Biryani', NOW_0).session;
+
+    const cartResult = step(session, 'CART', NOW_0 + 1000);
+    expect(cartResult.replies[0]).toContain('Veg Biryani');
+    expect(cartResult.replies[0]).toMatch(/Subtotal/);
+
+    const cleared = step(session, 'CLEAR CART', NOW_0 + 2000);
+    expect(cleared.session.cart).toEqual([]);
+    expect(cleared.replies[0]).toMatch(/cleared/i);
+  });
+
+  it('CHECKOUT on an empty cart tells the user instead of proceeding', () => {
+    const session = freshSession(PHONE, NOW_0);
+    const result = step(session, 'CHECKOUT', NOW_0);
+    expect(result.session.state).toBe('IDLE');
+    expect(result.replies[0]).toMatch(/cart is empty/i);
+  });
+
+  it('ADD/REMOVE/CHECKOUT are refused mid-selection, without disturbing the in-progress flow', () => {
+    let session = freshSession(PHONE, NOW_0);
+    session = step(session, 'Veg Biryani', NOW_0).session;
+    expect(session.state).toBe('AWAITING_SELECTION');
+
+    const result = step(session, 'Add coffee', NOW_0 + 1000);
+    expect(result.session.state).toBe('AWAITING_SELECTION');
+    expect(result.replies[0]).toMatch(/finish/i);
+  });
+
+  it('removing a dish not in the cart says so instead of erroring', () => {
+    const session = freshSession(PHONE, NOW_0);
+    const result = step(session, 'Remove pizza', NOW_0);
+    expect(result.replies[0]).toMatch(/isn't in your cart/i);
+  });
+});
 
 describe('REORDER', () => {
   it('says there is nothing to reorder before any order has ever been placed', () => {
@@ -247,19 +349,19 @@ describe('REORDER', () => {
     expect(result.session.state).toBe('AWAITING_SELECTION');
   });
 
-  it('re-selects the same dish and jumps straight to the quantity prompt', () => {
+  it('adds every item from the last order back into the cart', () => {
     const placed = placeOrder(NOW_0);
-    const lastItemName = placed.currentOrder!.cart.itemName;
+    const lastItemName = placed.currentOrder!.cart[0]!.itemName;
 
     const result = step(placed, 'REORDER', NOW_0 + 1000);
-    expect(result.session.state).toBe('AWAITING_QUANTITY');
-    expect(result.session.selected?.item.name).toBe(lastItemName);
-    expect(result.replies[0]).toContain(lastItemName);
+    expect(result.session.state).toBe('IDLE');
+    expect(result.session.cart).toHaveLength(1);
+    expect(result.session.cart[0]!.itemName).toBe(lastItemName);
+    expect(result.replies[0]).toMatch(/added 1 item/i);
 
-    // and the rest of the flow works exactly as normal from here
-    const qtyResult = step(result.session, '2', NOW_0 + 2000);
-    expect(qtyResult.session.state).toBe('AWAITING_ADDRESS');
-    expect(qtyResult.session.quantity).toBe(2);
+    // and checkout from here works exactly as normal
+    const checkoutResult = step(result.session, 'CHECKOUT', NOW_0 + 2000);
+    expect(checkoutResult.session.state).toBe('AWAITING_ADDRESS');
   });
 });
 
@@ -294,22 +396,24 @@ describe('post-delivery rating', () => {
     const delivered = step(placed, 'STATUS', NOW_0 + 91_000);
     expect(delivered.replies.join('\n')).toMatch(/how was your order/i);
     expect(delivered.session.pendingRatingOrderId).toBe(placed.currentOrder!.id);
+    expect(delivered.quickReplies?.map((q) => q.value)).toEqual(['1', '2', '3', '4', '5', 'SKIP']);
 
     // asking again does not re-prompt
     const again = step(delivered.session, 'STATUS', NOW_0 + 92_000);
     expect(again.replies.join('\n')).not.toMatch(/how was your order/i);
   });
 
-  it('records a numeric reply as the rating and stops prompting', () => {
+  it('records a numeric reply as one rating entry per cart line and stops prompting', () => {
     const placed = placeOrder(NOW_0);
     const delivered = step(placed, 'STATUS', NOW_0 + 91_000).session;
 
     const rated = step(delivered, '5', NOW_0 + 92_000);
     expect(rated.session.pendingRatingOrderId).toBeNull();
     expect(rated.replies[0]).toMatch(/5-star/i);
-    expect(rated.ratingToRecord).toMatchObject({
-      restaurantId: placed.currentOrder!.cart.restaurantId,
-      itemId: placed.currentOrder!.cart.itemId,
+    expect(rated.ratingsToRecord).toHaveLength(1);
+    expect(rated.ratingsToRecord![0]).toMatchObject({
+      restaurantId: placed.currentOrder!.cart[0]!.restaurantId,
+      itemId: placed.currentOrder!.cart[0]!.itemId,
       rating: 5,
     });
   });
@@ -320,7 +424,7 @@ describe('post-delivery rating', () => {
 
     const skipped = step(delivered, 'SKIP', NOW_0 + 92_000);
     expect(skipped.session.pendingRatingOrderId).toBeNull();
-    expect(skipped.ratingToRecord).toBeUndefined();
+    expect(skipped.ratingsToRecord).toBeUndefined();
   });
 
   it('mentions the delivery partner once the order is out for delivery', () => {

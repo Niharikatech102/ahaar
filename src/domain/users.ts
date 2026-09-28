@@ -130,11 +130,15 @@ export async function addUser(name: string, phone?: string, addressLine?: string
 }
 
 /**
- * Appends a freshly-rated order to a customer's history, feeding straight
- * into the recommender's history-affinity signal for future searches. A
- * no-op for guests (no profile row exists to attach the rating to).
+ * Appends freshly-rated order lines to a customer's history - one entry per
+ * cart line in the rated order, since a multi-item order rates every dish
+ * in it the same way the user rated the whole order. Feeds straight into
+ * the recommender's history-affinity signal for future searches. A no-op
+ * for guests (no profile row exists to attach the rating to).
  */
-export async function recordOrderRating(phone: string, pastOrder: PastOrder): Promise<void> {
+export async function recordOrderRatings(phone: string, pastOrders: PastOrder[]): Promise<void> {
+  if (pastOrders.length === 0) return;
+
   const db = getDb();
   if (db) {
     const rows = await db.select().from(usersTable).where(eq(usersTable.phone, phone)).limit(1);
@@ -142,13 +146,13 @@ export async function recordOrderRating(phone: string, pastOrder: PastOrder): Pr
     if (!existing) return;
     await db
       .update(usersTable)
-      .set({ orderHistory: [pastOrder, ...existing.orderHistory] })
+      .set({ orderHistory: [...pastOrders, ...existing.orderHistory] })
       .where(eq(usersTable.phone, phone));
     return;
   }
 
   const target = seededUsers.find((u) => u.phone === phone) ?? addedUsers.find((u) => u.phone === phone);
-  if (target) target.orderHistory = [pastOrder, ...target.orderHistory];
+  if (target) target.orderHistory = [...pastOrders, ...target.orderHistory];
 }
 
 /** Cold-start profile for a phone number we have no history for - no saved address, empty history. */

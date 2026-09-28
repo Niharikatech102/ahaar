@@ -118,8 +118,8 @@ export function createSimulatorRouter(store: SessionStore): Router {
       }
     };
 
-    sendUpdate();
     const timer = setInterval(sendUpdate, STREAM_INTERVAL_MS);
+    sendUpdate();
     req.on('close', () => {
       clearInterval(timer);
       log.info(`stream closed for ${orderId}`);

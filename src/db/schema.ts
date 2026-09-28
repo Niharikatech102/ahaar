@@ -1,6 +1,6 @@
 import { boolean, integer, jsonb, pgTable, real, text, timestamp } from 'drizzle-orm/pg-core';
 import type { Address, CatalogEntry, PastOrder, Recommendation } from '../domain/types.js';
-import type { Order } from '../domain/order.js';
+import type { CartItem, Order } from '../domain/order.js';
 import type { ConversationState } from '../core/session.js';
 
 export const restaurants = pgTable('restaurants', {
@@ -41,6 +41,7 @@ export const sessions = pgTable('sessions', {
   shownRecommendations: jsonb('shown_recommendations').$type<Recommendation[]>().notNull().default([]),
   selected: jsonb('selected').$type<CatalogEntry | null>(),
   quantity: integer('quantity'),
+  cart: jsonb('cart').$type<CartItem[]>().notNull().default([]),
   address: text('address'),
   appliedPromoCode: text('applied_promo_code'),
   appliedDiscount: real('applied_discount').notNull().default(0),

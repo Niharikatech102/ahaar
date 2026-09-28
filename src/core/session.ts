@@ -5,7 +5,7 @@ import { DATA_DIR } from '../config.js';
 import { createLogger } from '../logger.js';
 import { getDb, type Db } from '../db/client.js';
 import { sessions as sessionsTable } from '../db/schema.js';
-import type { Order } from '../domain/order.js';
+import type { CartItem, Order } from '../domain/order.js';
 import type { CatalogEntry, Recommendation } from '../domain/types.js';
 
 const log = createLogger('session');
@@ -22,8 +22,11 @@ export interface Session {
   phone: string;
   state: ConversationState;
   shownRecommendations: Recommendation[];
+  /** The dish currently being configured (between picking it and confirming a quantity) - not yet in the cart. */
   selected: CatalogEntry | null;
   quantity: number | null;
+  /** The persistent multi-item cart. Survives MENU/CANCEL; only cleared by CONFIRM or CLEAR CART. */
+  cart: CartItem[];
   address: string | null;
   appliedPromoCode: string | null;
   appliedDiscount: number;
@@ -42,6 +45,7 @@ export function freshSession(phone: string, now: number): Session {
     shownRecommendations: [],
     selected: null,
     quantity: null,
+    cart: [],
     address: null,
     appliedPromoCode: null,
     appliedDiscount: 0,
@@ -128,6 +132,7 @@ export class SessionStore {
         shownRecommendations: row.shownRecommendations,
         selected: row.selected,
         quantity: row.quantity,
+        cart: row.cart,
         address: row.address,
         appliedPromoCode: row.appliedPromoCode,
         appliedDiscount: row.appliedDiscount,
@@ -152,6 +157,7 @@ export class SessionStore {
           shownRecommendations: session.shownRecommendations,
           selected: session.selected,
           quantity: session.quantity,
+          cart: session.cart,
           address: session.address,
           appliedPromoCode: session.appliedPromoCode,
           appliedDiscount: session.appliedDiscount,
@@ -167,6 +173,7 @@ export class SessionStore {
             shownRecommendations: session.shownRecommendations,
             selected: session.selected,
             quantity: session.quantity,
+            cart: session.cart,
             address: session.address,
             appliedPromoCode: session.appliedPromoCode,
             appliedDiscount: session.appliedDiscount,

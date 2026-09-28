@@ -19,8 +19,13 @@ export interface Bill {
 const DELIVERY_FEE = 30;
 const GST_RATE = 0.05;
 
-export function computeBill(cart: CartItem, discount = 0, promoCode: string | null = null): Bill {
-  const subtotal = cart.unitPrice * cart.quantity;
+/** Sum of unitPrice*quantity across every line in the cart. */
+export function cartSubtotal(cart: CartItem[]): number {
+  return cart.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+}
+
+export function computeBill(cart: CartItem[], discount = 0, promoCode: string | null = null): Bill {
+  const subtotal = cartSubtotal(cart);
   const cappedDiscount = Math.min(discount, subtotal);
   const taxableAmount = subtotal - cappedDiscount;
   const gst = Math.round(taxableAmount * GST_RATE);
@@ -41,10 +46,11 @@ export type OrderStatus = 'CONFIRMED' | 'PREPARING' | 'OUT_FOR_DELIVERY' | 'DELI
 export interface Order {
   id: string;
   phone: string;
-  cart: CartItem;
+  cart: CartItem[];
   bill: Bill;
   address: string;
   placedAt: number;
+  /** Slowest ETA across every restaurant represented in the cart. */
   restaurantEtaMinutes: number;
 }
 

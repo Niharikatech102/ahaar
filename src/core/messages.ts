@@ -5,12 +5,18 @@ import { deliveryPartnerFor, statusMessage } from '../domain/delivery.js';
 
 const HELP_TEXT = [
   '*How this works*',
-  'Type a dish, e.g. "Veg Biryani", and I will suggest three highly-rated options.',
+  'Type a dish, e.g. "Veg Biryani", and I will suggest three highly-rated options. Or just say *"add pizza"* to add it straight to your cart.',
   '',
   'Anytime, you can type:',
+  '*ADD <dish>* — add a dish straight to your cart',
+  '*REMOVE <dish>* — take a dish out of your cart',
+  '*MAKE <dish> <qty>* — change a cart item\'s quantity, e.g. "make coffee two"',
+  '*CART* — see what\'s in your cart',
+  '*CHECKOUT* — pay for what\'s in your cart',
+  '*CLEAR CART* — empty your cart',
   '*MENU* — start a fresh search',
   '*STATUS* — check your current order',
-  '*REORDER* — order your last meal again',
+  '*REORDER* — add your whole last order back to your cart',
   '*CANCEL* — abort what you are doing',
   '*HELP* — show this message',
 ].join('\n');
@@ -132,10 +138,17 @@ export function allPromosMessage(promos: { promo: Promo; discount: number }[]): 
   ].join('\n');
 }
 
-function billLines(cart: CartItem, bill: Bill): string[] {
-  const lines = [
-    `${cart.itemName} x${cart.quantity} — ₹${bill.subtotal}`,
-  ];
+/** Unique restaurant names represented in a cart, in first-seen order. */
+function restaurantNames(cart: CartItem[]): string[] {
+  return [...new Set(cart.map((line) => line.restaurantName))];
+}
+
+function cartLineDescriptions(cart: CartItem[]): string[] {
+  return cart.map((line) => `${line.itemName} x${line.quantity} — ₹${line.unitPrice * line.quantity}`);
+}
+
+function billLines(bill: Bill): string[] {
+  const lines: string[] = [];
   if (bill.discount > 0) {
     lines.push(`Discount${bill.appliedPromoCode ? ` (${bill.appliedPromoCode})` : ''}: -₹${bill.discount}`);
   }
@@ -145,17 +158,75 @@ function billLines(cart: CartItem, bill: Bill): string[] {
   return lines;
 }
 
-export function billMessage(cart: CartItem, bill: Bill, address: string): string {
+export function billMessage(cart: CartItem[], bill: Bill, address: string): string {
   return [
     '*Order summary*',
-    `${cart.restaurantName}`,
+    restaurantNames(cart).join(' + '),
     '',
-    ...billLines(cart, bill),
+    ...cartLineDescriptions(cart),
+    `Subtotal: ₹${bill.subtotal}`,
+    ...billLines(bill),
     '',
     `Deliver to: ${address}`,
     '',
     'Reply *CONFIRM* to place the order, or *CANCEL* to abort.',
   ].join('\n');
+}
+
+export function emptyCartMessage(): string {
+  return "Your cart is empty. Tell me what you're craving, or type *ADD <dish>* to add something straight to it.";
+}
+
+export function cartMessage(cart: CartItem[]): string {
+  if (cart.length === 0) return emptyCartMessage();
+  const subtotal = cart.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+  return [
+    `*Your cart (${cart.length} item${cart.length === 1 ? '' : 's'})*`,
+    '',
+    ...cartLineDescriptions(cart),
+    '',
+    `Subtotal: ₹${subtotal}`,
+    '',
+    'Type *CHECKOUT* to pay, *ADD <dish>*/*REMOVE <dish>* to keep editing, or *CLEAR CART* to start over.',
+  ].join('\n');
+}
+
+export function itemAddedMessage(line: CartItem, cart: CartItem[]): string {
+  const subtotal = cart.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
+  return [
+    `Added *${line.itemName}* x${line.quantity} from ${line.restaurantName} to your cart.`,
+    `Cart: ${cart.length} item${cart.length === 1 ? '' : 's'}, ₹${subtotal}.`,
+    'Keep adding dishes, or type *CHECKOUT* when you\'re ready.',
+  ].join('\n');
+}
+
+export function itemRemovedMessage(line: CartItem, cart: CartItem[]): string {
+  if (cart.length === 0) {
+    return `Removed *${line.itemName}*. Your cart is empty now.`;
+  }
+  const subtotal = cart.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
+  return `Removed *${line.itemName}*. Cart: ${cart.length} item${cart.length === 1 ? '' : 's'}, ₹${subtotal}.`;
+}
+
+export function quantityUpdatedMessage(line: CartItem, cart: CartItem[]): string {
+  const subtotal = cart.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
+  return `Updated *${line.itemName}* to x${line.quantity}. Cart: ${cart.length} item${cart.length === 1 ? '' : 's'}, ₹${subtotal}.`;
+}
+
+export function cartClearedMessage(): string {
+  return 'Cart cleared. Tell me what you\'re craving whenever you\'re ready.';
+}
+
+export function cartBusyMessage(): string {
+  return "Finish or *CANCEL* what you're doing first, then try that again.";
+}
+
+export function addItemNotFoundMessage(query: string): string {
+  return `I couldn't find a 4-star-or-above match for "${query}" to add. Try a different dish.`;
+}
+
+export function removeItemNotFoundMessage(query: string): string {
+  return `"${query}" isn't in your cart. Type *CART* to see what's there.`;
 }
 
 export function invalidConfirmMessage(): string {
@@ -212,12 +283,21 @@ export function cannotReorderMidFlowMessage(): string {
   return 'Finish or *CANCEL* what you\'re doing first, then type *REORDER* to order your last meal again.';
 }
 
-export function reorderItemUnavailableMessage(): string {
-  return "Sorry, that dish isn't available anymore. Tell me what else you're craving.";
+export function reorderNothingAvailableMessage(): string {
+  return "Sorry, none of the dishes from that order are available anymore. Tell me what else you're craving.";
 }
 
-export function reorderMessage(itemName: string, restaurantName: string, lastQuantity: number): string {
-  return `Reordering *${itemName}* from ${restaurantName} (last time: ${lastQuantity}). How many would you like?`;
+export function reorderAddedMessage(cart: CartItem[], addedCount: number, skippedNames: string[]): string {
+  const subtotal = cart.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
+  const lines = [
+    `Added ${addedCount} item${addedCount === 1 ? '' : 's'} from your last order back to your cart.`,
+  ];
+  if (skippedNames.length > 0) {
+    lines.push(`(Skipped, no longer available: ${skippedNames.join(', ')}.)`);
+  }
+  lines.push(`Cart: ${cart.length} item${cart.length === 1 ? '' : 's'}, ₹${subtotal}.`);
+  lines.push('Keep adding dishes, or type *CHECKOUT* when you\'re ready.');
+  return lines.join('\n');
 }
 
 export function fallbackMessage(): string {

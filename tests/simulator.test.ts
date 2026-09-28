@@ -103,7 +103,8 @@ describe('POST /sim/users', () => {
     }
     await send('Masala Dosa');
     await send('1');
-    const addressPrompt = await send('1');
+    await send('1');
+    const addressPrompt = await send('CHECKOUT');
     expect(addressPrompt.replies[0]).toContain('9 Full Detail Street, Chennai');
   });
 
@@ -155,6 +156,7 @@ describe('GET /sim/orders/current', () => {
     await send('Masala Dosa');
     await send('1');
     await send('1');
+    await send('CHECKOUT');
     await send('YES');
     await send('SKIP');
     const confirmResult = await send('CONFIRM');
@@ -191,7 +193,10 @@ describe('full order flow over HTTP', () => {
     expect(searchResult.quickReplies).toBeNull();
 
     await send('1');
-    const addressResult = await send('1');
+    const addedResult = await send('1');
+    expect(addedResult.replies[0]).toContain('Added');
+
+    const addressResult = await send('CHECKOUT');
     expect(addressResult.quickReplies).toEqual([
       { label: 'Yes, deliver here', value: 'YES' },
       { label: 'Use a different address', value: '__focus_input__' },
@@ -255,6 +260,7 @@ describe('full order flow over HTTP', () => {
     await sendAs('Masala Dosa');
     await sendAs('1');
     await sendAs('1');
+    await sendAs('CHECKOUT');
     await sendAs('YES');
     await sendAs('SKIP');
 
@@ -279,6 +285,7 @@ describe('full order flow over HTTP', () => {
     await sendAs('Veg Biryani');
     await sendAs('1'); // Nawab's Kitchen Veg Biryani, Rs260
     await sendAs('2'); // qty 2 -> Rs520 subtotal, crosses MEGA100's Rs500 minimum
+    await sendAs('CHECKOUT');
     const promoResult = await sendAs('YES');
 
     expect(promoResult.quickReplies).toEqual([
