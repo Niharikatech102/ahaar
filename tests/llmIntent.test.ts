@@ -3,8 +3,9 @@ import { extractParsedQuery, parseQueryWithLLM } from '../src/core/llmIntent.js'
 
 describe('parseQueryWithLLM', () => {
   it('returns null immediately with no API key configured, making no network call', async () => {
-    // tests/setup.ts clears GROQ_API_KEY before any src module loads, so this
-    // exercises the exact path the demo takes with no Groq key set at all.
+    // tests/setup.ts clears both GROQ_API_KEY and ANTHROPIC_API_KEY before any
+    // src module loads, so this exercises the exact path the demo takes with
+    // no LLM key set at all.
     const start = Date.now();
     const result = await parseQueryWithLLM('something spicy under 300');
     const elapsed = Date.now() - start;

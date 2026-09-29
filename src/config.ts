@@ -48,14 +48,23 @@ export const config = {
     apiKey: str('GROQ_API_KEY'),
     model: str('GROQ_MODEL', 'openai/gpt-oss-20b'),
   },
+  // BYOK: bring your own Anthropic key. Nothing is bundled or shared - each
+  // deployment supplies its own key via env, exactly like Groq below. Tried
+  // first when present (see core/llmIntent.ts), since it's this project's
+  // best-quality option; Groq remains the free-tier fallback if only that's
+  // set, and the regex parser in core/intent.ts if neither is.
+  anthropic: {
+    apiKey: str('ANTHROPIC_API_KEY'),
+    model: str('ANTHROPIC_MODEL', 'claude-haiku-4-5-20251001'),
+  },
   database: {
     url: str('DATABASE_URL'),
   },
 } as const;
 
-/** True when a Groq key is configured - otherwise intent parsing falls back to the keyword parser. */
+/** True when any LLM provider key is configured - otherwise intent parsing falls back to the keyword parser. */
 export function isLlmConfigured(): boolean {
-  return Boolean(config.groq.apiKey);
+  return Boolean(config.anthropic.apiKey || config.groq.apiKey);
 }
 
 /** True when a Postgres connection string is configured - otherwise storage falls back to local JSON files. */
