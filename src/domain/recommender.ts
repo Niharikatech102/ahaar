@@ -166,6 +166,8 @@ export interface RecommendOptions {
   fallbackTypicalSpend?: number;
   /** The user's saved food preferences, if any - an additional scoring signal layered on top of history. */
   preferences?: UserPreferences;
+  /** Item ids to leave out entirely - how "give me more" avoids repeating dishes already shown for this search. */
+  excludeItemIds?: string[];
 }
 
 /**
@@ -181,10 +183,11 @@ export function recommend(
   const limit = options.limit ?? 3;
   const typicalSpend = estimateTypicalSpend(history, options.fallbackTypicalSpend ?? 250);
 
+  const excludeIds = new Set(options.excludeItemIds ?? []);
   const candidates = searchCatalog(query, {
     vegOnly: options.vegOnly,
     maxPrice: options.maxPrice,
-  });
+  }).filter((entry) => !excludeIds.has(entry.item.id));
 
   const scored = candidates.map((entry) => {
     const qScore = matchScore(entry, tokenize(query));

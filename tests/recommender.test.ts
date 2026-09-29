@@ -89,6 +89,15 @@ describe('recommend', () => {
     expect(results.some((r) => r.entry.item.name === 'Paneer Biryani')).toBe(false);
   });
 
+  it('excludeItemIds leaves out already-shown dishes so "give me more" never repeats them', () => {
+    const firstBatch = recommend('veg biryani', aryanHistory);
+    const excludeIds = firstBatch.map((r) => r.entry.item.id);
+    const secondBatch = recommend('veg biryani', aryanHistory, { excludeItemIds: excludeIds });
+    for (const r of secondBatch) {
+      expect(excludeIds).not.toContain(r.entry.item.id);
+    }
+  });
+
   describe('preferences signal', () => {
     const prefs: UserPreferences = { cuisines: [], dietary: 'veg', spiceLevel: null, budgetMax: 300 };
 

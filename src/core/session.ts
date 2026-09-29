@@ -10,6 +10,11 @@ import type { CatalogEntry, Recommendation } from '../domain/types.js';
 
 const log = createLogger('session');
 
+/** A placed order plus whether/when it was later cancelled - the record My Orders reads, since `currentOrder` only ever holds the single most recent one. */
+export interface PlacedOrder extends Order {
+  cancelledAt: number | null;
+}
+
 export type ConversationState =
   | 'IDLE'
   | 'AWAITING_SELECTION'
@@ -23,6 +28,8 @@ export interface Session {
   phone: string;
   state: ConversationState;
   shownRecommendations: Recommendation[];
+  /** The free-text search behind the current shownRecommendations - how "give me more" re-runs the same search excluding what's already been shown. */
+  lastQuery: string | null;
   /** The dish currently being configured (between picking it and confirming a quantity) - not yet in the cart. */
   selected: CatalogEntry | null;
   quantity: number | null;
@@ -34,6 +41,8 @@ export interface Session {
   /** Picked during AWAITING_PAYMENT; carried onto the placed Order. Demo-only, no real payment integration. */
   paymentMethod: PaymentMethod | null;
   currentOrder: Order | null;
+  /** Every order this phone has ever placed, most recent first - what My Orders (Active/Delivered/Cancelled) reads. Never cleared by MENU/CANCEL/resetToIdle. */
+  pastOrders: PlacedOrder[];
   /** Order id awaiting a reply to the post-delivery rating prompt, or null if none is pending. */
   pendingRatingOrderId: string | null;
   /** Order id we've already shown the rating prompt for, so it's never asked twice. */
@@ -46,6 +55,7 @@ export function freshSession(phone: string, now: number): Session {
     phone,
     state: 'IDLE',
     shownRecommendations: [],
+    lastQuery: null,
     selected: null,
     quantity: null,
     cart: [],
@@ -54,6 +64,7 @@ export function freshSession(phone: string, now: number): Session {
     appliedDiscount: 0,
     paymentMethod: null,
     currentOrder: null,
+    pastOrders: [],
     pendingRatingOrderId: null,
     ratingHandledForOrderId: null,
     updatedAt: now,
@@ -66,6 +77,7 @@ export function resetToIdle(session: Session, now: number): Session {
     ...session,
     state: 'IDLE',
     shownRecommendations: [],
+    lastQuery: null,
     selected: null,
     quantity: null,
     address: null,
@@ -135,6 +147,7 @@ export class SessionStore {
         phone: row.phone,
         state: row.state,
         shownRecommendations: row.shownRecommendations,
+        lastQuery: row.lastQuery,
         selected: row.selected,
         quantity: row.quantity,
         cart: row.cart,
@@ -143,6 +156,7 @@ export class SessionStore {
         appliedDiscount: row.appliedDiscount,
         paymentMethod: row.paymentMethod,
         currentOrder: row.currentOrder,
+        pastOrders: row.pastOrders,
         pendingRatingOrderId: row.pendingRatingOrderId,
         ratingHandledForOrderId: row.ratingHandledForOrderId,
         updatedAt: row.updatedAt.getTime(),
@@ -161,6 +175,7 @@ export class SessionStore {
           phone: session.phone,
           state: session.state,
           shownRecommendations: session.shownRecommendations,
+          lastQuery: session.lastQuery,
           selected: session.selected,
           quantity: session.quantity,
           cart: session.cart,
@@ -169,6 +184,7 @@ export class SessionStore {
           appliedDiscount: session.appliedDiscount,
           paymentMethod: session.paymentMethod,
           currentOrder: session.currentOrder,
+          pastOrders: session.pastOrders,
           pendingRatingOrderId: session.pendingRatingOrderId,
           ratingHandledForOrderId: session.ratingHandledForOrderId,
           updatedAt: new Date(session.updatedAt),
@@ -178,6 +194,7 @@ export class SessionStore {
           set: {
             state: session.state,
             shownRecommendations: session.shownRecommendations,
+            lastQuery: session.lastQuery,
             selected: session.selected,
             quantity: session.quantity,
             cart: session.cart,
@@ -186,6 +203,7 @@ export class SessionStore {
             appliedDiscount: session.appliedDiscount,
             paymentMethod: session.paymentMethod,
             currentOrder: session.currentOrder,
+            pastOrders: session.pastOrders,
             pendingRatingOrderId: session.pendingRatingOrderId,
             ratingHandledForOrderId: session.ratingHandledForOrderId,
             updatedAt: new Date(session.updatedAt),

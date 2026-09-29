@@ -50,7 +50,8 @@ export function noResultsMessage(query: string): string {
   ].join('\n');
 }
 
-export function recommendationsMessage(recs: Recommendation[]): string {
+/** `startIndex` lets "give me more" continue the numbering (4, 5, 6...) instead of restarting at 1. */
+export function recommendationsMessage(recs: Recommendation[], startIndex = 0): string {
   const lines = recs.map((r, i) => {
     const { entry } = r;
     const vegTag = entry.item.veg ? '🟢' : '🔴';
@@ -58,7 +59,7 @@ export function recommendationsMessage(recs: Recommendation[]): string {
       `[REC_START]`,
       entry.item.image ? `[IMG:${entry.item.image}]` : '',
       `[CONTENT_START]`,
-      `*${i + 1}. ${entry.item.name}* ${vegTag}`,
+      `*${startIndex + i + 1}. ${entry.item.name}* ${vegTag}`,
       `${entry.restaurant.name} · ₹${entry.item.price}`,
       r.reason,
       `[CONTENT_END]`,
@@ -66,13 +67,23 @@ export function recommendationsMessage(recs: Recommendation[]): string {
     ].filter(Boolean).join('\n');
   });
 
+  const first = startIndex + 1;
+  const last = startIndex + recs.length;
   return [
-    `Here are my top ${recs.length} picks:`,
+    startIndex === 0 ? `Here are my top ${recs.length} picks:` : `Here are ${recs.length} more:`,
     '',
     lines.join('\n\n'),
     '',
-    'Reply *1*, *2* or *3* to choose, or type another dish to search again.',
+    `Reply *${first}*${last > first ? `-*${last}*` : ''} to choose, type *GIVE ME MORE* for other options, or type another dish to search again.`,
   ].join('\n');
+}
+
+export function noMoreRecommendationsMessage(): string {
+  return "That's everything I've got matching that search — try a different dish, or drop a filter.";
+}
+
+export function noMoreRecommendationsContextMessage(): string {
+  return 'Search for a dish first, then I can show you more options for it.';
 }
 
 export function invalidSelectionMessage(count: number): string {

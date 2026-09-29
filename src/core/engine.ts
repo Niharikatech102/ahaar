@@ -69,7 +69,7 @@ export async function processMessage(
     (session.state === 'IDLE' || isRetypedSearchDuringSelection);
   const parsedQueryOverride = isFreshSearch ? (await parseQueryWithLLM(text)) ?? undefined : undefined;
 
-  const { session: nextSession, replies, quickReplies, ratingsToRecord } = handleMessage(session, text, {
+  const { session: nextSession, replies, quickReplies, ratingsToRecord, recommendations } = handleMessage(session, text, {
     profile,
     now,
     parsedQueryOverride,
@@ -80,6 +80,6 @@ export async function processMessage(
     replies,
     orderId: nextSession.currentOrder?.id ?? null,
     quickReplies: quickReplies ?? null,
-    recommendations: nextSession.state === 'AWAITING_SELECTION' ? nextSession.shownRecommendations : null,
+    recommendations: recommendations ?? null,
   };
 }

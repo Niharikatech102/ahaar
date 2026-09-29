@@ -2,13 +2,15 @@ export type GlobalCommand =
   | 'MENU' | 'HELP' | 'STATUS' | 'CANCEL' | 'REORDER'
   | 'CART' | 'VIEW CART' | 'SHOW CART' | 'MY CART'
   | 'CHECKOUT' | 'CLEAR CART' | 'EMPTY CART'
-  | 'MY USUAL' | 'USUAL' | 'ORDER MY USUAL';
+  | 'MY USUAL' | 'USUAL' | 'ORDER MY USUAL'
+  | 'GIVE ME MORE' | 'MORE' | 'SHOW MORE' | 'MORE OPTIONS' | 'MORE RECOMMENDATIONS';
 
 const GLOBAL_COMMANDS: GlobalCommand[] = [
   'MENU', 'HELP', 'STATUS', 'CANCEL', 'REORDER',
   'CART', 'VIEW CART', 'SHOW CART', 'MY CART',
   'CHECKOUT', 'CLEAR CART', 'EMPTY CART',
   'MY USUAL', 'USUAL', 'ORDER MY USUAL',
+  'GIVE ME MORE', 'MORE', 'SHOW MORE', 'MORE OPTIONS', 'MORE RECOMMENDATIONS',
 ];
 
 export function parseGlobalCommand(text: string): GlobalCommand | null {

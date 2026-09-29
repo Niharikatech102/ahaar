@@ -1,7 +1,8 @@
 import { boolean, integer, jsonb, pgTable, real, text, timestamp } from 'drizzle-orm/pg-core';
 import type { Address, CatalogEntry, PastOrder, Recommendation, UserPreferences } from '../domain/types.js';
 import type { CartItem, Order, PaymentMethod } from '../domain/order.js';
-import type { ConversationState } from '../core/session.js';
+import type { ConversationState, PlacedOrder } from '../core/session.js';
+import type { ComplaintCategory, ComplaintStatus } from '../domain/complaints.js';
 
 export const restaurants = pgTable('restaurants', {
   id: text('id').primaryKey(),
@@ -45,6 +46,7 @@ export const sessions = pgTable('sessions', {
   phone: text('phone').primaryKey(),
   state: text('state').$type<ConversationState>().notNull(),
   shownRecommendations: jsonb('shown_recommendations').$type<Recommendation[]>().notNull().default([]),
+  lastQuery: text('last_query'),
   selected: jsonb('selected').$type<CatalogEntry | null>(),
   quantity: integer('quantity'),
   cart: jsonb('cart').$type<CartItem[]>().notNull().default([]),
@@ -53,7 +55,18 @@ export const sessions = pgTable('sessions', {
   appliedDiscount: real('applied_discount').notNull().default(0),
   paymentMethod: text('payment_method').$type<PaymentMethod | null>(),
   currentOrder: jsonb('current_order').$type<Order | null>(),
+  pastOrders: jsonb('past_orders').$type<PlacedOrder[]>().notNull().default([]),
   pendingRatingOrderId: text('pending_rating_order_id'),
   ratingHandledForOrderId: text('rating_handled_for_order_id'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const complaints = pgTable('complaints', {
+  id: text('id').primaryKey(),
+  phone: text('phone').notNull(),
+  orderId: text('order_id').notNull(),
+  category: text('category').$type<ComplaintCategory>().notNull(),
+  description: text('description'),
+  status: text('status').$type<ComplaintStatus>().notNull().default('OPEN'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

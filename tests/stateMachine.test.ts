@@ -537,3 +537,97 @@ describe('MY TOTAL', () => {
     expect(result.replies[0]).toMatch(/cart is empty/i);
   });
 });
+
+describe('GIVE ME MORE', () => {
+  it('appends a fresh batch excluding every dish already shown, and continues numbering', () => {
+    let session = freshSession(PHONE, NOW_0);
+    const first = step(session, 'veg biryani', NOW_0);
+    session = first.session;
+    expect(session.shownRecommendations).toHaveLength(3);
+    const firstIds = session.shownRecommendations.map((r) => r.entry.item.id);
+
+    const result = step(session, 'GIVE ME MORE', NOW_0 + 1000);
+    session = result.session;
+
+    // the reply text and structured recommendations both reflect only the new batch
+    expect(result.replies[0]).toMatch(/more/i);
+    expect(result.recommendations).toBeDefined();
+    for (const r of result.recommendations!) {
+      expect(firstIds).not.toContain(r.entry.item.id);
+    }
+
+    // cumulative list grew, and numbering for a new batch continues past 3
+    expect(session.shownRecommendations.length).toBeGreaterThan(3);
+    expect(result.replies[0]).toMatch(/4/);
+  });
+
+  it('also works via natural phrasing ("more", "show more")', () => {
+    for (const phrase of ['more', 'show more', 'more options', 'more recommendations']) {
+      let session = freshSession(PHONE, NOW_0);
+      session = step(session, 'veg biryani', NOW_0).session;
+      const result = step(session, phrase, NOW_0 + 1000);
+      expect(result.session.shownRecommendations.length).toBeGreaterThan(3);
+    }
+  });
+
+  it('selecting a numbered option from the extended list still resolves correctly', () => {
+    let session = freshSession(PHONE, NOW_0);
+    session = step(session, 'veg biryani', NOW_0).session;
+    session = step(session, 'GIVE ME MORE', NOW_0 + 1000).session;
+    const fourthRec = session.shownRecommendations[3];
+    expect(fourthRec).toBeDefined();
+
+    const result = step(session, '4', NOW_0 + 2000);
+    expect(result.session.state).toBe('AWAITING_QUANTITY');
+    expect(result.session.selected?.item.id).toBe(fourthRec!.entry.item.id);
+  });
+
+  it('gracefully declines when asked before ever searching', () => {
+    const session = freshSession(PHONE, NOW_0);
+    const result = step(session, 'GIVE ME MORE', NOW_0);
+    expect(result.session.shownRecommendations).toHaveLength(0);
+    expect(result.replies[0]).toMatch(/search/i);
+  });
+
+  it('says there is nothing left rather than erroring once every match has been shown', () => {
+    let session = freshSession(PHONE, NOW_0);
+    session = step(session, 'veg biryani', NOW_0).session;
+
+    // Keep asking for more until the matches for this query are exhausted -
+    // the exact count depends on the catalog, so loop rather than hardcode it.
+    let result = step(session, 'GIVE ME MORE', NOW_0 + 1000);
+    let guard = 0;
+    while (result.recommendations && result.recommendations.length > 0 && guard < 30) {
+      session = result.session;
+      result = step(session, 'GIVE ME MORE', NOW_0 + 1000);
+      guard += 1;
+    }
+
+    expect(result.replies[0]).toMatch(/everything i've got/i);
+  });
+});
+
+describe('order history (pastOrders)', () => {
+  it('records a placed order into pastOrders alongside currentOrder', () => {
+    const placed = placeOrder(NOW_0);
+    expect(placed.pastOrders).toHaveLength(1);
+    expect(placed.pastOrders[0]!.id).toBe(placed.currentOrder!.id);
+    expect(placed.pastOrders[0]!.cancelledAt).toBeNull();
+  });
+
+  it('marks the matching pastOrders entry cancelled instead of deleting it, when cancelled post-confirm', () => {
+    const placed = placeOrder(NOW_0);
+    const orderId = placed.currentOrder!.id;
+
+    const result = step(placed, 'CANCEL', NOW_0 + 1000);
+    expect(result.session.pastOrders).toHaveLength(1);
+    expect(result.session.pastOrders[0]!.id).toBe(orderId);
+    expect(result.session.pastOrders[0]!.cancelledAt).toBe(NOW_0 + 1000);
+  });
+
+  it('keeps pastOrders across MENU/CANCEL resets, unlike shownRecommendations', () => {
+    const placed = placeOrder(NOW_0);
+    const result = step(placed, 'MENU', NOW_0 + 1000);
+    expect(result.session.pastOrders).toHaveLength(1);
+  });
+});

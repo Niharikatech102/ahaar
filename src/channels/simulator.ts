@@ -16,7 +16,10 @@ import { deliveryPartnerFor, isPartnerAssigned, statusAt } from '../domain/deliv
 import { computeBill, type CartItem } from '../domain/order.js';
 import { getAllPromos } from '../domain/promos.js';
 import { getAllRestaurants, getItemById, getRestaurantById, searchCatalog } from '../domain/catalog.js';
+import { createComplaint, getComplaintsForUser, type ComplaintCategory } from '../domain/complaints.js';
 import { createLogger } from '../logger.js';
+
+const COMPLAINT_CATEGORIES: ComplaintCategory[] = ['LATE_DELIVERY', 'WRONG_ITEM', 'MISSING_ITEM', 'FOOD_QUALITY', 'OTHER'];
 
 const log = createLogger('simulator');
 const STREAM_INTERVAL_MS = 2000;
@@ -291,6 +294,73 @@ export function createSimulatorRouter(store: SessionStore): Router {
 
     const status = statusAt(session.currentOrder.placedAt, Date.now());
     res.json({ order: { id: session.currentOrder.id, status, partner: partnerFor(session.currentOrder.id, status) } });
+  });
+
+  /**
+   * "Report an issue" is order-linked, not a free-standing ticket - an
+   * order id must actually belong to this phone's own order history
+   * (current or past) before a complaint can be filed against it.
+   */
+  router.get('/orders', async (req: Request, res: Response) => {
+    const phone = req.query['phone'];
+    if (typeof phone !== 'string' || !phone.trim()) {
+      res.status(400).json({ error: 'phone query parameter is required' });
+      return;
+    }
+    const session = await store.get(phone, Date.now());
+    const orders = session.pastOrders.map((o) => ({
+      id: o.id,
+      cart: o.cart,
+      bill: o.bill,
+      address: o.address,
+      paymentMethod: o.paymentMethod,
+      placedAt: o.placedAt,
+      status: o.cancelledAt !== null ? 'CANCELLED' : statusAt(o.placedAt, Date.now()),
+      partner: o.cancelledAt === null ? partnerFor(o.id, statusAt(o.placedAt, Date.now())) : null,
+    }));
+    res.json({ orders });
+  });
+
+  router.post('/complaints', async (req: Request, res: Response) => {
+    const { phone, orderId, category, description } = (req.body ?? {}) as {
+      phone?: unknown;
+      orderId?: unknown;
+      category?: unknown;
+      description?: unknown;
+    };
+    if (typeof phone !== 'string' || !phone.trim() || typeof orderId !== 'string' || !orderId.trim()) {
+      res.status(400).json({ error: 'phone and orderId are required' });
+      return;
+    }
+    if (typeof category !== 'string' || !COMPLAINT_CATEGORIES.includes(category as ComplaintCategory)) {
+      res.status(400).json({ error: `category must be one of ${COMPLAINT_CATEGORIES.join(', ')}` });
+      return;
+    }
+
+    const session = await store.get(phone, Date.now());
+    const ownsOrder = session.pastOrders.some((o) => o.id === orderId);
+    if (!ownsOrder) {
+      res.status(404).json({ error: 'no matching order for this phone' });
+      return;
+    }
+
+    const complaint = await createComplaint({
+      phone,
+      orderId,
+      category: category as ComplaintCategory,
+      description: typeof description === 'string' ? description : null,
+    });
+    res.status(201).json({ complaint });
+  });
+
+  router.get('/complaints', async (req: Request, res: Response) => {
+    const phone = req.query['phone'];
+    if (typeof phone !== 'string' || !phone.trim()) {
+      res.status(400).json({ error: 'phone query parameter is required' });
+      return;
+    }
+    const complaints = await getComplaintsForUser(phone);
+    res.json({ complaints });
   });
 
   router.post('/message', async (req: Request, res: Response) => {

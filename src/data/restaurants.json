@@ -482,6 +482,34 @@
           "cooling"
         ],
         "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c4/Pakistani_Food_Karahi_Beef.jpg/500px-Pakistani_Food_Karahi_Beef.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+      },
+      {
+        "id": "i0507",
+        "name": "Aloo Paratha",
+        "veg": true,
+        "price": 130,
+        "tags": [
+          "breakfast",
+          "punjabi",
+          "bread",
+          "mild",
+          "comfort"
+        ],
+        "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Aloo_Paratha_North_Indian.jpg/500px-Aloo_Paratha_North_Indian.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+      },
+      {
+        "id": "i0508",
+        "name": "Dal Khichdi",
+        "veg": true,
+        "price": 150,
+        "tags": [
+          "comfort",
+          "mild",
+          "rice",
+          "healthy",
+          "north indian"
+        ],
+        "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0a/Khichdi.jpg/500px-Khichdi.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
       }
     ]
   },

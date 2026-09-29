@@ -470,4 +470,85 @@ describe('GET /sim/catalog', () => {
       expect(entry.restaurant.rating).toBeGreaterThanOrEqual(4.0);
     }
   });
+
+  it('finds Aloo Paratha and Dal Khichdi when searched by name', async () => {
+    const parathaRes = await fetch(`${baseUrl}/sim/catalog?q=aloo paratha`);
+    const parathaData = await parathaRes.json();
+    expect(parathaData.entries.some((e: { item: { name: string } }) => e.item.name === 'Aloo Paratha')).toBe(true);
+
+    const khichdiRes = await fetch(`${baseUrl}/sim/catalog?q=dal khichdi`);
+    const khichdiData = await khichdiRes.json();
+    expect(khichdiData.entries.some((e: { item: { name: string } }) => e.item.name === 'Dal Khichdi')).toBe(true);
+  });
+});
+
+describe('GET /sim/orders and POST/GET /sim/complaints', () => {
+  const phone = 'whatsapp:+15551230099';
+
+  async function send(text: string) {
+    const res = await fetch(`${baseUrl}/sim/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, text }),
+    });
+    return res.json();
+  }
+
+  it('lists an empty order history before anything has been placed', async () => {
+    const res = await fetch(`${baseUrl}/sim/orders?phone=${encodeURIComponent('whatsapp:+15551230098')}`);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.orders).toEqual([]);
+  });
+
+  it('lists a placed order, and lets a complaint be filed against it and read back', async () => {
+    await send('Masala Dosa');
+    await send('1');
+    await send('1');
+    await send('CHECKOUT');
+    await send('YES');
+    await send('SKIP');
+    await send('COD');
+    const confirmResult = await send('CONFIRM');
+    const orderId = confirmResult.orderId as string;
+
+    const ordersRes = await fetch(`${baseUrl}/sim/orders?phone=${encodeURIComponent(phone)}`);
+    const ordersData = await ordersRes.json();
+    expect(ordersData.orders).toHaveLength(1);
+    expect(ordersData.orders[0].id).toBe(orderId);
+    expect(ordersData.orders[0].status).toBe('CONFIRMED');
+
+    const complaintRes = await fetch(`${baseUrl}/sim/complaints`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, orderId, category: 'LATE_DELIVERY', description: 'Very late' }),
+    });
+    expect(complaintRes.status).toBe(201);
+    const complaintData = await complaintRes.json();
+    expect(complaintData.complaint.orderId).toBe(orderId);
+    expect(complaintData.complaint.status).toBe('OPEN');
+    expect(complaintData.complaint.category).toBe('LATE_DELIVERY');
+
+    const listRes = await fetch(`${baseUrl}/sim/complaints?phone=${encodeURIComponent(phone)}`);
+    const listData = await listRes.json();
+    expect(listData.complaints.some((c: { id: string }) => c.id === complaintData.complaint.id)).toBe(true);
+  });
+
+  it('rejects a complaint against an order id that does not belong to this phone', async () => {
+    const res = await fetch(`${baseUrl}/sim/complaints`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, orderId: 'ORD-NOT-REAL', category: 'OTHER' }),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it('rejects an invalid category', async () => {
+    const res = await fetch(`${baseUrl}/sim/complaints`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, orderId: 'ORD-NOT-REAL', category: 'NOT_A_REAL_CATEGORY' }),
+    });
+    expect(res.status).toBe(400);
+  });
 });

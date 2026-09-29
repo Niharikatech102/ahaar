@@ -3,7 +3,7 @@ import { applicablePromos, bestApplicablePromo, evaluatePromo, getPromoByCode } 
 import { computeBill, generateOrderId, type CartItem, type Order } from '../domain/order.js';
 import { statusAt } from '../domain/delivery.js';
 import { getItemById, getRestaurantById } from '../domain/catalog.js';
-import type { PastOrder, UserProfile } from '../domain/types.js';
+import type { PastOrder, Recommendation, UserProfile } from '../domain/types.js';
 import {
   isBestDiscountRequest,
   isTotalRequest,
@@ -48,6 +48,8 @@ export interface StepResult {
   quickReplies?: QuickReply[];
   /** Set only on the turn a numeric star rating was just submitted - engine.ts persists it, one PastOrder per cart line that was rated. */
   ratingsToRecord?: PastOrder[];
+  /** The batch of recommendation cards freshly shown this turn (a search or "give me more"), for a UI that wants structured data instead of parsing the reply text. Not the cumulative list - just what's new right now. */
+  recommendations?: Recommendation[];
 }
 
 function defaultAddressLine(profile: UserProfile): string | null {
@@ -166,9 +168,43 @@ function handleIdle(session: Session, text: string, ctx: Ctx): StepResult {
     ...session,
     state: 'AWAITING_SELECTION',
     shownRecommendations: recs,
+    lastQuery: query.raw,
     updatedAt: ctx.now,
   };
-  return { session: next, replies: [msg.recommendationsMessage(recs)] };
+  return { session: next, replies: [msg.recommendationsMessage(recs)], recommendations: recs };
+}
+
+/**
+ * "Give me more" / "show more" - re-runs the same search that produced the
+ * current recommendations, excluding every dish already shown, and appends
+ * the new batch so replying "4" still resolves correctly against the
+ * cumulative list.
+ */
+function handleMoreRecommendations(session: Session, ctx: Ctx): StepResult {
+  if (session.state !== 'AWAITING_SELECTION' || !session.lastQuery) {
+    return { session, replies: [msg.noMoreRecommendationsContextMessage()] };
+  }
+
+  const alreadyShown = session.shownRecommendations.map((r) => r.entry.item.id);
+  const more = recommend(session.lastQuery, ctx.profile.orderHistory, {
+    preferences: ctx.profile.preferences,
+    excludeItemIds: alreadyShown,
+  });
+
+  if (more.length === 0) {
+    return { session, replies: [msg.noMoreRecommendationsMessage()] };
+  }
+
+  const next: Session = {
+    ...session,
+    shownRecommendations: [...session.shownRecommendations, ...more],
+    updatedAt: ctx.now,
+  };
+  return {
+    session: next,
+    replies: [msg.recommendationsMessage(more, alreadyShown.length)],
+    recommendations: more,
+  };
 }
 
 function handleAwaitingSelection(session: Session, text: string, ctx: Ctx): StepResult {
@@ -513,7 +549,14 @@ function handleAwaitingConfirm(session: Session, text: string, ctx: Ctx): StepRe
   };
 
   const next = resetToIdle(
-    { ...session, cart: [], currentOrder: order, pendingRatingOrderId: null, ratingHandledForOrderId: null },
+    {
+      ...session,
+      cart: [],
+      currentOrder: order,
+      pastOrders: [{ ...order, cancelledAt: null }, ...session.pastOrders],
+      pendingRatingOrderId: null,
+      ratingHandledForOrderId: null,
+    },
     ctx.now,
   );
   return { session: next, replies: [msg.orderPlacedMessage(order)] };
@@ -618,6 +661,9 @@ export function handleMessage(session: Session, text: string, ctx: Ctx): StepRes
         const next: Session = {
           ...session,
           currentOrder: null,
+          pastOrders: session.pastOrders.map((o) =>
+            o.id === cancelledId ? { ...o, cancelledAt: ctx.now } : o,
+          ),
           pendingRatingOrderId: null,
           ratingHandledForOrderId: null,
         };
@@ -652,6 +698,16 @@ export function handleMessage(session: Session, text: string, ctx: Ctx): StepRes
 
   if (command === 'MY USUAL' || command === 'USUAL' || command === 'ORDER MY USUAL') {
     return handleMyUsual(session, ctx);
+  }
+
+  if (
+    command === 'GIVE ME MORE' ||
+    command === 'MORE' ||
+    command === 'SHOW MORE' ||
+    command === 'MORE OPTIONS' ||
+    command === 'MORE RECOMMENDATIONS'
+  ) {
+    return handleMoreRecommendations(session, ctx);
   }
 
   if (command === 'CART' || command === 'VIEW CART' || command === 'SHOW CART' || command === 'MY CART') {
