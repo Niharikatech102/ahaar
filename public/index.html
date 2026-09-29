@@ -8,173 +8,110 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
     rel="stylesheet"
   />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <div class="stage">
-    <div class="app-shell">
-      <!-- LEFT SIDEBAR -->
-      <aside class="sidebar">
-        <div class="brand">
-          <img class="brand-logo" src="/assets/logo.png" alt="Ahaar" />
-          <div class="brand-text">
-            <div class="brand-name">Ahaar</div>
-            <div class="brand-tag">Good food, brighter days</div>
-          </div>
+  <div class="wa-stage">
+    <div class="wa-frame">
+      <header class="wa-header">
+        <button type="button" class="wa-back" id="backBtn" aria-label="Back">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <img class="wa-avatar" src="/assets/logo.png" alt="" />
+        <div class="wa-header-text">
+          <div class="wa-title">Ahaar Food Assistant</div>
+          <div class="wa-status"><span id="statusLine">online</span></div>
         </div>
+        <button type="button" class="wa-menu-btn" id="menuBtn" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+        </button>
+      </header>
 
-        <button type="button" class="new-order-btn" id="newOrderBtn">+ New order</button>
+      <div class="wa-menu-dropdown hidden" id="menuDropdown" role="menu">
+        <button type="button" role="menuitem" data-menu-action="switch-customer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Switch customer</button>
+        <button type="button" role="menuitem" data-menu-action="new-order"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> New order</button>
+        <button type="button" role="menuitem" data-menu-action="my-orders"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73V8Z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg> My Orders</button>
+        <button type="button" role="menuitem" data-menu-action="preferences"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> My Preferences</button>
+        <button type="button" role="menuitem" data-menu-action="promos"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Promo Codes</button>
+        <button type="button" role="menuitem" data-menu-action="help"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> Help / Support</button>
+      </div>
 
-        <nav class="nav-list" id="navList">
-          <button type="button" class="nav-item active" data-nav="chat">
-            <span class="nav-icon">chat</span>Chat
-          </button>
-          <button type="button" class="nav-item" data-nav="browse">
-            <span class="nav-icon">menu</span>Browse menu
-          </button>
-          <button type="button" class="nav-item" data-nav="orders">
-            <span class="nav-icon">order</span>My orders
-          </button>
-          <button type="button" class="nav-item" data-nav="preferences">
-            <span class="nav-icon">pref</span>My preferences
-          </button>
-          <button type="button" class="nav-item" data-nav="promos">
-            <span class="nav-icon">tag</span>Promo codes
-          </button>
-        </nav>
+      <div id="transcript" class="wa-chat"></div>
 
-        <div class="sidebar-section">
-          <div class="section-label">Chatting as</div>
-          <div id="userList" class="user-list"></div>
-        </div>
-
-        <div class="promo-teaser" id="promoTeaser" data-nav="promos">
-          <div class="promo-teaser-title">Offers waiting for you</div>
-          <div class="promo-teaser-body" id="promoTeaserBody">Loading current offers…</div>
-          <span class="promo-teaser-cta">View all promo codes →</span>
-        </div>
-      </aside>
-
-      <!-- CENTER: CHAT -->
-      <main class="chat-main">
-        <header class="chat-header">
-          <img class="chat-avatar" src="/assets/logo.png" alt="" />
-          <div class="chat-header-text">
-            <div class="chat-title">Ahaar Food Bot</div>
-            <div class="chat-subtitle"><span class="pulse-dot"></span><span id="statusLine">online</span></div>
-          </div>
-        </header>
-
-        <div id="transcript" class="transcript"></div>
-
-        <div class="quick-suggestions" id="quickSuggestions"></div>
-
-        <form id="composer" class="composer">
-          <button type="button" class="composer-icon-btn" disabled title="Attachments aren't part of this demo">📎</button>
-          <input id="textInput" type="text" placeholder="Tell me what you're craving…" autocomplete="off" />
-          <button type="button" class="composer-icon-btn" disabled title="Voice input isn't part of this demo">🎤</button>
-          <button type="submit" class="send-btn">Send</button>
-        </form>
-      </main>
-
-      <!-- RIGHT: CART + TRACKING -->
-      <aside class="right-panel">
-        <div class="cart-panel">
-          <div class="panel-header">
-            <div class="panel-title" id="cartTitle">Your cart</div>
-            <button type="button" class="text-btn" id="clearCartBtn">Clear</button>
-          </div>
-
-          <div id="cartItems" class="cart-items">
-            <div class="cart-empty">Your cart is empty. Ask Ahaar for something to eat.</div>
-          </div>
-
-          <div class="promo-row">
-            <input id="promoInput" type="text" placeholder="Have a promo code?" autocomplete="off" />
-            <button type="button" id="applyPromoBtn">Apply</button>
-          </div>
-          <button type="button" class="best-discount-btn hidden" id="bestDiscountBtn">Use best available discount</button>
-          <div id="promoFeedback" class="promo-feedback hidden"></div>
-
-          <div class="bill-breakdown hidden" id="billBreakdown"></div>
-
-          <button type="button" class="checkout-btn" id="checkoutBtn" disabled>Proceed to checkout</button>
-        </div>
-
-        <div class="tracking-panel">
-          <div class="panel-header">
-            <div class="panel-title">Order tracking</div>
-          </div>
-
-          <div id="orderTracker" class="order-tracker hidden">
-            <div class="tracker-order-id" id="trackerOrderId"></div>
-            <div class="tracker-steps">
-              <div class="step" data-step="CONFIRMED"><span class="dot"></span>Confirmed</div>
-              <div class="step" data-step="PREPARING"><span class="dot"></span>Preparing</div>
-              <div class="step" data-step="PICKED_UP"><span class="dot"></span>Picked up</div>
-              <div class="step" data-step="OUT_FOR_DELIVERY"><span class="dot"></span>Out for delivery</div>
-              <div class="step" data-step="DELIVERED"><span class="dot"></span>Delivered</div>
-            </div>
-            <div id="trackerPartner" class="tracker-partner hidden"></div>
-          </div>
-          <div class="tracking-empty" id="trackingEmpty">No active order right now.</div>
-        </div>
-      </aside>
+      <form id="composer" class="wa-composer">
+        <button type="button" class="wa-icon-btn" disabled title="Emoji aren't part of this demo">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        </button>
+        <input id="textInput" type="text" placeholder="Type a message..." autocomplete="off" />
+        <button type="button" class="wa-icon-btn" disabled title="Attachments aren't part of this demo">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.64 18.36a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <button type="submit" class="wa-send-btn" id="sendBtn" aria-label="Send message">
+          <span class="wa-send-icon" id="sendIcon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></span>
+        </button>
+      </form>
     </div>
   </div>
 
-  <!-- Add customer modal -->
-  <div id="addUserOverlay" class="modal-overlay hidden">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="addUserTitle">
-      <div class="modal-header">
-        <h2 id="addUserTitle">Add new customer</h2>
-        <button type="button" id="addUserClose" class="modal-close" aria-label="Close">✕</button>
+  <!-- Switch customer -->
+  <div id="customerOverlay" class="wa-sheet-overlay hidden">
+    <div class="wa-sheet" role="dialog" aria-modal="true" aria-labelledby="customerSheetTitle">
+      <div class="wa-sheet-handle"></div>
+      <div class="wa-sheet-header">
+        <h2 id="customerSheetTitle">Chatting as</h2>
+        <button type="button" id="customerClose" class="wa-sheet-close" aria-label="Close"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
+      <div id="customerList" class="wa-contact-list"></div>
+    </div>
+  </div>
 
-      <form id="addUserForm" class="modal-form">
-        <label class="modal-field">
+  <!-- Add customer -->
+  <div id="addUserOverlay" class="wa-sheet-overlay hidden">
+    <div class="wa-sheet" role="dialog" aria-modal="true" aria-labelledby="addUserTitle">
+      <div class="wa-sheet-handle"></div>
+      <div class="wa-sheet-header">
+        <h2 id="addUserTitle">Add new customer</h2>
+        <button type="button" id="addUserClose" class="wa-sheet-close" aria-label="Close"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <form id="addUserForm" class="wa-sheet-form">
+        <label class="wa-field">
           <span>Name</span>
           <input id="newUserName" type="text" placeholder="e.g. Rahul Sharma" autocomplete="off" required />
         </label>
-
-        <label class="modal-field">
+        <label class="wa-field">
           <span>Contact number <em>(optional)</em></span>
           <input id="newUserPhone" type="tel" placeholder="e.g. 98765 43210" autocomplete="off" />
         </label>
-
-        <label class="modal-field">
+        <label class="wa-field">
           <span>Delivery address <em>(optional)</em></span>
           <input id="newUserAddress" type="text" placeholder="e.g. 12 MG Road, Bengaluru" autocomplete="off" />
         </label>
-
-        <p id="addUserError" class="modal-error hidden"></p>
-
-        <div class="modal-actions">
-          <button type="button" id="addUserCancel" class="modal-btn secondary">Cancel</button>
-          <button type="submit" class="modal-btn primary">Add customer</button>
+        <p id="addUserError" class="wa-field-error hidden"></p>
+        <div class="wa-sheet-actions">
+          <button type="button" id="addUserCancel" class="wa-btn secondary">Cancel</button>
+          <button type="submit" class="wa-btn primary">Add customer</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Preferences modal -->
-  <div id="preferencesOverlay" class="modal-overlay hidden">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="preferencesTitle">
-      <div class="modal-header">
+  <!-- Preferences -->
+  <div id="preferencesOverlay" class="wa-sheet-overlay hidden">
+    <div class="wa-sheet" role="dialog" aria-modal="true" aria-labelledby="preferencesTitle">
+      <div class="wa-sheet-handle"></div>
+      <div class="wa-sheet-header">
         <h2 id="preferencesTitle">My preferences</h2>
-        <button type="button" id="preferencesClose" class="modal-close" aria-label="Close">✕</button>
+        <button type="button" id="preferencesClose" class="wa-sheet-close" aria-label="Close"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-
-      <form id="preferencesForm" class="modal-form">
-        <label class="modal-field">
+      <form id="preferencesForm" class="wa-sheet-form">
+        <label class="wa-field">
           <span>Favourite cuisines <em>(comma separated)</em></span>
           <input id="prefCuisines" type="text" placeholder="e.g. biryani, italian, thai" autocomplete="off" />
         </label>
-
-        <label class="modal-field">
+        <label class="wa-field">
           <span>Dietary preference</span>
           <select id="prefDietary">
             <option value="">No preference</option>
@@ -183,8 +120,7 @@
             <option value="vegan">Vegan</option>
           </select>
         </label>
-
-        <label class="modal-field">
+        <label class="wa-field">
           <span>Spice level</span>
           <select id="prefSpice">
             <option value="">No preference</option>
@@ -193,35 +129,35 @@
             <option value="spicy">Spicy</option>
           </select>
         </label>
-
-        <label class="modal-field">
+        <label class="wa-field">
           <span>Usual budget per dish (₹) <em>(optional)</em></span>
           <input id="prefBudget" type="number" min="1" placeholder="e.g. 300" autocomplete="off" />
         </label>
-
-        <p id="preferencesError" class="modal-error hidden"></p>
-
-        <div class="modal-actions">
-          <button type="button" id="preferencesCancel" class="modal-btn secondary">Cancel</button>
-          <button type="submit" class="modal-btn primary">Save preferences</button>
+        <p id="preferencesError" class="wa-field-error hidden"></p>
+        <div class="wa-sheet-actions">
+          <button type="button" id="preferencesCancel" class="wa-btn secondary">Cancel</button>
+          <button type="submit" class="wa-btn primary">Save preferences</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Generic info modal: Browse menu / My orders / Promo codes / Food details -->
-  <div id="infoOverlay" class="modal-overlay hidden">
-    <div class="modal-dialog modal-dialog-wide" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
-      <div class="modal-header">
+  <!-- Generic sheet: My Orders / Promo codes / Browse menu / Food detail -->
+  <div id="infoOverlay" class="wa-sheet-overlay hidden">
+    <div class="wa-sheet wa-sheet-tall" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+      <div class="wa-sheet-handle"></div>
+      <div class="wa-sheet-header">
         <h2 id="infoTitle">—</h2>
-        <button type="button" id="infoClose" class="modal-close" aria-label="Close">✕</button>
+        <button type="button" id="infoClose" class="wa-sheet-close" aria-label="Close"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-      <div id="infoSearch" class="modal-search hidden">
+      <div id="infoSearch" class="wa-sheet-search hidden">
         <input id="infoSearchInput" type="text" placeholder="Search the menu…" autocomplete="off" />
       </div>
-      <div id="infoBody" class="modal-body"></div>
+      <div id="infoBody" class="wa-sheet-body"></div>
     </div>
   </div>
+
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
   <script src="/app.js"></script>
 </body>
