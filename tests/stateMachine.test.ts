@@ -539,7 +539,7 @@ describe('MY TOTAL', () => {
 });
 
 describe('GIVE ME MORE', () => {
-  it('appends a fresh batch excluding every dish already shown, and continues numbering', () => {
+  it('replaces the batch with a fresh 3, excluding every dish already shown, renumbered from 1', () => {
     let session = freshSession(PHONE, NOW_0);
     const first = step(session, 'veg biryani', NOW_0);
     session = first.session;
@@ -556,9 +556,14 @@ describe('GIVE ME MORE', () => {
       expect(firstIds).not.toContain(r.entry.item.id);
     }
 
-    // cumulative list grew, and numbering for a new batch continues past 3
-    expect(session.shownRecommendations.length).toBeGreaterThan(3);
-    expect(result.replies[0]).toMatch(/4/);
+    // the visible/selectable list stays at (at most) 3, renumbered from 1 - not a cumulative, ever-growing list
+    expect(session.shownRecommendations.length).toBeLessThanOrEqual(3);
+    expect(result.replies[0]).toMatch(/\*1\./);
+
+    // but the exclusion memory keeps growing, so a *third* batch still can't repeat the first batch's dishes
+    for (const id of firstIds) {
+      expect(session.excludedItemIds).toContain(id);
+    }
   });
 
   it('also works via natural phrasing ("more", "show more")', () => {
@@ -566,20 +571,21 @@ describe('GIVE ME MORE', () => {
       let session = freshSession(PHONE, NOW_0);
       session = step(session, 'veg biryani', NOW_0).session;
       const result = step(session, phrase, NOW_0 + 1000);
-      expect(result.session.shownRecommendations.length).toBeGreaterThan(3);
+      expect(result.session.shownRecommendations.length).toBeLessThanOrEqual(3);
+      expect(result.session.shownRecommendations.length).toBeGreaterThan(0);
     }
   });
 
-  it('selecting a numbered option from the extended list still resolves correctly', () => {
+  it('selecting a numbered option from the new batch still resolves correctly', () => {
     let session = freshSession(PHONE, NOW_0);
     session = step(session, 'veg biryani', NOW_0).session;
     session = step(session, 'GIVE ME MORE', NOW_0 + 1000).session;
-    const fourthRec = session.shownRecommendations[3];
-    expect(fourthRec).toBeDefined();
+    const secondRec = session.shownRecommendations[1];
+    expect(secondRec).toBeDefined();
 
-    const result = step(session, '4', NOW_0 + 2000);
+    const result = step(session, '2', NOW_0 + 2000);
     expect(result.session.state).toBe('AWAITING_QUANTITY');
-    expect(result.session.selected?.item.id).toBe(fourthRec!.entry.item.id);
+    expect(result.session.selected?.item.id).toBe(secondRec!.entry.item.id);
   });
 
   it('gracefully declines when asked before ever searching', () => {

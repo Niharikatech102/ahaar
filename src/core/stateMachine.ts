@@ -187,6 +187,7 @@ function handleIdle(session: Session, text: string, ctx: Ctx): StepResult {
     ...session,
     state: 'AWAITING_SELECTION',
     shownRecommendations: recs,
+    excludedItemIds: recs.map((r) => r.entry.item.id),
     lastQuery: query.raw,
     updatedAt: ctx.now,
   };
@@ -195,21 +196,20 @@ function handleIdle(session: Session, text: string, ctx: Ctx): StepResult {
 
 /**
  * "Give me more" / "show more" - re-runs the same search that produced the
- * current recommendations, excluding every dish already shown, and appends
- * the new batch so replying "4" still resolves correctly against the
- * cumulative list.
+ * current recommendations, excluding the dishes just shown, and REPLACES
+ * them with a fresh batch of (at most) 3 - the visible/selectable list
+ * never grows past 3, it's just a new 3 each time, renumbered 1-3.
  */
 function handleMoreRecommendations(session: Session, ctx: Ctx): StepResult {
   if (session.state !== 'AWAITING_SELECTION' || !session.lastQuery) {
     return { session, replies: [msg.noMoreRecommendationsContextMessage()] };
   }
 
-  const alreadyShown = session.shownRecommendations.map((r) => r.entry.item.id);
   const more = recommend(session.lastQuery, ctx.profile.orderHistory, {
     vegOnly: resolveVegOnly(false, session.lastQuery, ctx.profile.preferences),
     maxPrice: resolveMaxPrice(undefined, ctx.profile.preferences),
     preferences: ctx.profile.preferences,
-    excludeItemIds: alreadyShown,
+    excludeItemIds: session.excludedItemIds,
   });
 
   if (more.length === 0) {
@@ -218,12 +218,13 @@ function handleMoreRecommendations(session: Session, ctx: Ctx): StepResult {
 
   const next: Session = {
     ...session,
-    shownRecommendations: [...session.shownRecommendations, ...more],
+    shownRecommendations: more,
+    excludedItemIds: [...session.excludedItemIds, ...more.map((r) => r.entry.item.id)],
     updatedAt: ctx.now,
   };
   return {
     session: next,
-    replies: [msg.recommendationsMessage(more, alreadyShown.length)],
+    replies: [msg.recommendationsMessage(more)],
     recommendations: more,
   };
 }

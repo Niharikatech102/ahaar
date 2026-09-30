@@ -46,6 +46,8 @@ export const sessions = pgTable('sessions', {
   phone: text('phone').primaryKey(),
   state: text('state').$type<ConversationState>().notNull(),
   shownRecommendations: jsonb('shown_recommendations').$type<Recommendation[]>().notNull().default([]),
+  /** Every item id shown across every "give me more" batch for the current search, so a later batch never repeats an earlier one even though shownRecommendations itself is replaced (not appended) each time. */
+  excludedItemIds: jsonb('excluded_item_ids').$type<string[]>().notNull().default([]),
   lastQuery: text('last_query'),
   selected: jsonb('selected').$type<CatalogEntry | null>(),
   quantity: integer('quantity'),

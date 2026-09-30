@@ -17,142 +17,531 @@ const state = {
 // a different recommended dish. Unknown dishes keep their backend image.
 
 const DISH_IMAGE_OVERRIDES = {
-  "Veg Biryani": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Vegetable-biryani.jpg",
+  "Dal Baati Churma": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0b/DalBati.jpg/500px-DalBati.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Khaman Dhokla": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Dhokla_on_Gujrart.jpg/500px-Dhokla_on_Gujrart.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Gatte Ki Sabzi": "https://upload.wikimedia.org/wikipedia/commons/5/51/The_delicious_Rajasthani_food.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "Nimbu Pani": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/82/Shikanji-_served_with_pomegranate%2Cgrated_apple_and_mint.jpg/500px-Shikanji-_served_with_pomegranate%2Cgrated_apple_and_mint.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Lunch Buffet": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/Swedish_buffet-Sm%C3%B6rg%C3%A5sbord-01.jpg/500px-Swedish_buffet-Sm%C3%B6rg%C3%A5sbord-01.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Aalo Bhaja": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Culin%C3%A1ria_tradicional_do_Nepal.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "Aam Panna": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/01/Keri_Ka_Sharbat.JPG/500px-Keri_Ka_Sharbat.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Achari Chicken": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Paneertikkaindia.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "Veg Biryani": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5a/%22Hyderabadi_Dum_Biryani%22.jpg/500px-%22Hyderabadi_Dum_Biryani%22.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
   "Haleem": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0f/Pakistani_Haleem_served_with_garnish.jpg/500px-Pakistani_Haleem_served_with_garnish.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
   "Masala Dosa": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/ba/Masala_Dosa_2023.jpg/500px-Masala_Dosa_2023.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
-  "Fish Curry Rice": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Fish_Curry_with_Rice.jpg",
+  "Fish Curry Rice": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/86/SL-rice_and_curry.jpg/500px-SL-rice_and_curry.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
   "Kadai Paneer": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Kadai_Paneer-Delhi-12.jpg/500px-Kadai_Paneer-Delhi-12.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
   "Butter Chicken": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/Butter_Chicken_%26_Butter_Naan_-_Home_-_Chandigarh_-_India_-_0006.jpg/500px-Butter_Chicken_%26_Butter_Naan_-_Home_-_Chandigarh_-_India_-_0006.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
   "Gujarati Thali": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/58/Gujarat_Thali.JPG/500px-Gujarat_Thali.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
   "Veg Fried Rice": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/Chinese_fried_rice.jpg/500px-Chinese_fried_rice.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
   "Chicken Manchurian": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bb/Chicken_Manchurian_%28Hyderabad_Style%29_%2811960049916%29.jpg/500px-Chicken_Manchurian_%28Hyderabad_Style%29_%2811960049916%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
-  "Cold Coffee": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Cold_coffee.jpg",
-  "Chicken Burger": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Chicken_Burger.jpg",
+  "Cold Coffee": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f4/Preparation_of_cold_brew_coffee_06.jpg/500px-Preparation_of_cold_brew_coffee_06.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Chicken Burger": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1f/Chicken_salad_sandwich_01.jpg/500px-Chicken_salad_sandwich_01.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
   "Margherita Pizza": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/57/Neapolitan_pizza_at_Trappica_%2848701940197%29.jpg/500px-Neapolitan_pizza_at_Trappica_%2848701940197%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
-  "Farmhouse Pizza": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Farmhouse_Pizza-Domino%27s-Ahmedabad-Gujarat-202013-1.jpg",
-  "Veg Burger": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8e/Veggie_burger.jpg/500px-Veggie_burger.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
-  "Chocolate Brownie": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Brownie.jpg",
-  "Mango Lassi": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Mango_Lassi.jpg",
-  "Mishti Doi": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Mishti_doi.jpg",
-  "Kosha Mangsho": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Kosha_Mangsho.jpg",
-  "Chicken Seekh Kebab": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Seekh_kebab.jpg",
-  "Curd Rice": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Curd_rice.jpg",
-  "Loaded Fries": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Loaded_fries.jpg",
-  "Filter Coffee": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Filter_coffee.jpg",
-  "Masala Chai": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Masala_Chai.jpg",
-  "Aloo Paratha": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Aloo_paratha.jpg",
-  "Gulab Jamun": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Gulab_jamun.jpg",
-  "Chole Bhature": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Chole_bhature.jpg",
-  "Chicken Lollipop": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Chicken_lollipop.jpg",
-  "Tandoori Roti": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Tandoori_roti.jpg",
-  "Dal Makhani": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Dal_makhani.jpg",
-  "Garlic Bread": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Garlic_bread.jpg",
-  "Veg Momos": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Momo_nepal.jpg",
-  "Chicken Momos": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Momo_chicken.jpg",
-  "Thukpa": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Thukpa.jpg",
-  "Medu Vada": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Medu_vada.jpg",
-  "Idli Sambar": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Idli_sambar.jpg",
-  "Veg Spring Rolls": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Spring_rolls.jpg",
-  "Veg Hakka Noodles": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Hakka_noodles.jpg",
-  "Nachos": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Nachos.jpg",
-  "Pasta": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Pasta.jpg",
-  "Cocktail": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Cocktail.jpg",
-  "Mocktail": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Mocktail.jpg",
-  "Waffle": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Waffle.jpg",
-  "Pancake": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Pancakes.jpg",
-  "Ice Cream": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Ice_Cream.jpg",
-  "Panipuri": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Pani_puri.jpg",
-  "Pav Bhaji": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Pav_bhaji.jpg",
-  "Chaat": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Chaat.jpg",
-  "Vegetable Sandwich": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Vegetable_sandwich.jpg",
-  "Lassi": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Lassi.jpg",
-  "Jalebi": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Jalebi.jpg",
-  "Vada Pav": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Vada_Pav.jpg",
-  "Sushi": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Sushi.jpg",
-  "Samosa": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Samosa.jpg",
-  "Poha": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Poha.jpg",
-  "Omelette": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Omelette.jpg",
-  "Steak": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Steak.jpg",
-  "Taco": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Taco.jpg",
-  "Chow Mein": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Chow_mein.jpg",
-  "Salad Platter": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Salad_platter.jpg",
-  "Rasgulla": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Rasgulla.jpg",
-  "Kaju Katli": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Kaju_katli.jpg"
+  "Farmhouse Pizza": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/Pizza-3007395.jpg/500px-Pizza-3007395.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Veg Burger": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/%D7%94%D7%9E%D7%91%D7%95%D7%A8%D7%92%D7%A8_%D7%98%D7%91%D7%A2%D7%95%D7%A0%D7%99.jpg/500px-%D7%94%D7%9E%D7%91%D7%95%D7%A8%D7%92%D7%A8_%D7%98%D7%91%D7%A2%D7%95%D7%A0%D7%99.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Chocolate Brownie": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/68/Chocolatebrownie.JPG/500px-Chocolatebrownie.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Mango Lassi": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f1/Salt_lassi.jpg/500px-Salt_lassi.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Mishti Doi": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/34/Mishti_Doi.jpg/500px-Mishti_Doi.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Kosha Mangsho": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/80/Bengali_Mutton_Curry.JPG/500px-Bengali_Mutton_Curry.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Chicken Seekh Kebab": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/Pakistani_Food_Beef_Kabobs.jpg/500px-Pakistani_Food_Beef_Kabobs.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Curd Rice": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/58/Curd_Rice.jpg/500px-Curd_Rice.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Chicken Tikka": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/00/Chicken_tikka_masala_%28cropped%29.jpg/500px-Chicken_tikka_masala_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Loaded Fries": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9a/At_University_of_Birmingham_2026_014.jpg/500px-At_University_of_Birmingham_2026_014.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Filter Coffee": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9f/Die_Chemex_6_Cup.jpg/500px-Die_Chemex_6_Cup.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Masala Chai": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/89/Chai_In_Sakora.jpg/500px-Chai_In_Sakora.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Aloo Paratha": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Aloo_Paratha_North_Indian.jpg/500px-Aloo_Paratha_North_Indian.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Gulab Jamun": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c1/Gulab-jamun-wallpaper-1.jpg/500px-Gulab-jamun-wallpaper-1.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Chole Bhature": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/Chole_Bhature_from_Nagpur.JPG/500px-Chole_Bhature_from_Nagpur.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Chicken Lollipop": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/Chicken_lollipop_in_Goa.jpg/500px-Chicken_lollipop_in_Goa.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Tandoori Roti": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/df/Az_Tandoor_e-citizen.jpg/500px-Az_Tandoor_e-citizen.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Dal Makhani": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Punjabi_style_Dal_Makhani.jpg/500px-Punjabi_style_Dal_Makhani.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Garlic Bread": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/Garlicbread.jpg/500px-Garlicbread.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Veg Momos": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/Momo_nepal.jpg/500px-Momo_nepal.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Chicken Momos": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/Momo_nepal.jpg/500px-Momo_nepal.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Thukpa": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7f/Thukpa%2C_Tibetan_noodle_in_Osaka%2C_Japan.jpg/500px-Thukpa%2C_Tibetan_noodle_in_Osaka%2C_Japan.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Medu Vada": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1b/Medu_Vada.JPG/500px-Medu_Vada.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Idli Sambar": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/11/Idli_Sambar.JPG/500px-Idli_Sambar.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Veg Spring Rolls": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1e/Spring_Rolls_%283357696061%29.jpg/500px-Spring_Rolls_%283357696061%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Veg Hakka Noodles": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Homemade_Chow_mein_with_shrimps_and_meat_with_a_choy_and_Choung.jpg/500px-Homemade_Chow_mein_with_shrimps_and_meat_with_a_choy_and_Choung.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Nachos": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/87/Nachos-cheese.jpg/500px-Nachos-cheese.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Pasta": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/Fettuccine_Alfredo_originals.jpg/500px-Fettuccine_Alfredo_originals.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Cocktail": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/80/15-09-26-RalfR-WLC-0084.jpg/500px-15-09-26-RalfR-WLC-0084.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Mocktail": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a8/Canadia-style_Shirley_Temple.jpg/500px-Canadia-style_Shirley_Temple.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Waffle": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Waffles_with_Strawberries.jpg/500px-Waffles_with_Strawberries.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Pancake": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/Foodiesfeed.com_pouring-honey-on-pancakes-with-walnuts.jpg/500px-Foodiesfeed.com_pouring-honey-on-pancakes-with-walnuts.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Ice Cream": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Vanilla_Ice_Cream_Cone_at_Camp_Manitoulin.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+  "Panipuri": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e9/Pani_Puri1.JPG/500px-Pani_Puri1.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Pav Bhaji": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Bambayya_Pav_bhaji.jpg/500px-Bambayya_Pav_bhaji.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Chaat": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/Dahi_puri%2C_Doi_phuchka.jpg/500px-Dahi_puri%2C_Doi_phuchka.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Vegetable Sandwich": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/26/Vegetable_sandwiches.jpg/500px-Vegetable_sandwiches.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Lassi": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f1/Salt_lassi.jpg/500px-Salt_lassi.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Jalebi": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/96/Basavanagudi_Kadalekai_Parishe_%282025%29_Bangalore_%2886%29.jpg/500px-Basavanagudi_Kadalekai_Parishe_%282025%29_Bangalore_%2886%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Vada Pav": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4e/Vada_Pav-Indian_street_food.JPG/500px-Vada_Pav-Indian_street_food.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Sushi": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/60/Sushi_platter.jpg/500px-Sushi_platter.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Samosa": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c4/Samosas%2C_snack_food_at_Wikipedia%27s_16th_Birthday_celebration_in_Chittagong_%2801%29.jpg/500px-Samosas%2C_snack_food_at_Wikipedia%27s_16th_Birthday_celebration_in_Chittagong_%2801%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Poha": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/85/Poha_in_the_Morning_-_Indori_Food.jpg/500px-Poha_in_the_Morning_-_Indori_Food.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "Omelette": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4d/Gorgonzola_%2B_Bacon_Omelette_%40_Omelegg_%40_Amsterdam_%2816600947041%29.jpg/500px-Gorgonzola_%2B_Bacon_Omelette_%40_Omelegg_%40_Amsterdam_%2816600947041%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Steak": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f4/Steak_with_shitaki_mushrooms.jpg/500px-Steak_with_shitaki_mushrooms.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Taco": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/001_Tacos_de_carnitas%2C_carne_asada_y_al_pastor.jpg/500px-001_Tacos_de_carnitas%2C_carne_asada_y_al_pastor.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Chow Mein": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Homemade_Chow_mein_with_shrimps_and_meat_with_a_choy_and_Choung.jpg/500px-Homemade_Chow_mein_with_shrimps_and_meat_with_a_choy_and_Choung.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Salad Platter": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/94/Salad_platter.jpg/500px-Salad_platter.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Rasgulla": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/39/Rasgulla.jpg/500px-Rasgulla.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Kaju Katli": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ac/Kaju_katli_sweet.jpg/500px-Kaju_katli_sweet.jpg",
+  "Cheesecake": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Baked_cheesecake_with_raspberries_and_blueberries.jpg/500px-Baked_cheesecake_with_raspberries_and_blueberries.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Thai Green Curry": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/Thai_green_chicken_curry_and_roti.jpg/500px-Thai_green_chicken_curry_and_roti.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Masala Papad": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/09/Roasted_Papad_-_Howrah_2013-11-02_4068.jpg/500px-Roasted_Papad_-_Howrah_2013-11-02_4068.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Bhel Puri": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Behael_Puri_%286105489342%29.jpg/500px-Behael_Puri_%286105489342%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Onion Rings": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/eb/OnionRings.JPG/500px-OnionRings.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+  "Crispy Corn": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f5/Barranquilla_bu%C3%B1uelos_de_ma%C3%ADz.jpg/500px-Barranquilla_bu%C3%B1uelos_de_ma%C3%ADz.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
 };
 
 const DISH_IMAGE_ALIASES = {
-  "berryblast": "Mocktail",
-  "berry blast": "Mocktail",
+  "chinese bhel": "Bhel Puri",
+  "corn bhel": "Bhel Puri",
+  "wai wai bhel": "Bhel Puri",
+  "bhel": "Bhel Puri",
+  "bhel puri": "Bhel Puri",
+  "thai green curry": "Thai Green Curry",
+  "masala papad": "Masala Papad",
+  "gulab jamun": "Gulab Jamun",
+  "kala jamun": "Gulab Jamun",
+  "cheesecake": "Cheesecake",
+  "jalebi": "Jalebi",
+  "rasgulla": "Rasgulla",
+  "kaju katli": "Kaju Katli",
+  "kaju katli sweet": "Kaju Katli",
+  "mishti doi": "Mishti Doi",
+  "halwa": "Halwa",
+  "chole bhature": "Chole Bhature",
+  "chole bature": "Chole Bhature",
+  "vada pav": "Vada Pav",
+  "vadapav": "Vada Pav",
+  "pav bhaji": "Pav Bhaji",
+  "keema pav": "Pav Bhaji",
+  "panipuri": "Panipuri",
+  "pani puri": "Panipuri",
+  "golgappa": "Panipuri",
+  "gol gappe": "Panipuri",
+  "golgappe": "Panipuri",
+  "dragon chicken": "Chicken Manchurian",
+  "manchurian": "Chicken Manchurian",
+  "chicken manchurian": "Chicken Manchurian",
+  "veg manchurian": "Chicken Manchurian",
+  "vegetable manchurian": "Chicken Manchurian",
+  "bulgogi": "Chicken Manchurian",
+  "butter chicken": "Butter Chicken",
+  "murgh makhani": "Butter Chicken",
+  "paneer butter masala": "Kadai Paneer",
+  "panneer butter masala": "Kadai Paneer",
+  "panner butter masala": "Kadai Paneer",
+  "dal makhani": "Dal Makhani",
+  "chicken tikka": "Chicken Tikka",
+  "chicken tikka masala": "Chicken Tikka",
+  "tandoori chicken": "Chicken Tikka",
+  "chicken curry": "Chicken Tikka",
+  "chicken grill": "Chicken Tikka",
+  "grilled chicken": "Chicken Tikka",
+  "murgh": "Chicken Tikka",
+  "chicken lollipop": "Chicken Lollipop",
+  "chicken lollipops": "Chicken Lollipop",
+  "lollipop": "Chicken Lollipop",
+  "chicken wings": "Chicken Lollipop",
+  "wings": "Chicken Lollipop",
+  "chilli chicken": "Chicken Lollipop",
+  "onion rings": "Onion Rings",
+  "potato wedges": "Loaded Fries",
+  "wedges": "Loaded Fries",
+  "chips": "Loaded Fries",
+  "crispy corn": "Crispy Corn",
+  "fries": "Loaded Fries",
+  "popcorn": "Loaded Fries",
+  "masala peanuts": "Loaded Fries",
+  "peanuts": "Loaded Fries",
+  "honey chilli potatoes": "Loaded Fries",
+  "potato skins": "Loaded Fries",
+  "potato mash": "Loaded Fries",
+  "fried cheese": "Loaded Fries",
+  "babycorn": "Loaded Fries",
+  "corn fritter": "Loaded Fries",
+  "lotus stem": "Loaded Fries",
+  "tandoori aloo": "Loaded Fries",
+  "loaded fries": "Loaded Fries",
+  "nachos": "Nachos",
+  "salsa": "Nachos",
   "virgin": "Mocktail",
   "virgin mojito": "Mocktail",
+  "virgin cocktail": "Mocktail",
   "mocktail": "Mocktail",
   "lemonade": "Mocktail",
-  "jal jeera": "Mocktail",
+  "juice": "Mocktail",
   "jal-jeera": "Mocktail",
   "jaljeera": "Mocktail",
   "aam panna": "Mocktail",
   "chaach": "Mocktail",
   "buttermilk": "Mocktail",
+  "buttermilk shot": "Mocktail",
   "lime soda": "Mocktail",
   "shikanji": "Mocktail",
   "thandai": "Mocktail",
   "masala soda": "Mocktail",
+  "berryblast": "Mocktail",
+  "berry blast": "Mocktail",
   "sharbat": "Mocktail",
   "aamras": "Mocktail",
-
-  "dumplings": "Veg Momos",
-  "dumpling": "Veg Momos",
-  "momo": "Veg Momos",
-  "momos": "Veg Momos",
-  "veg momo": "Veg Momos",
-  "veg momos": "Veg Momos",
-  "vegetable momos": "Veg Momos",
-
-  "chicken momo": "Chicken Momos",
-  "chicken momos": "Chicken Momos",
-
-  "chicken burger": "Chicken Burger",
+  "cocktail": "Cocktail",
+  "mojito": "Cocktail",
+  "sangria": "Cocktail",
+  "margarita": "Cocktail",
+  "martini": "Cocktail",
+  "long island": "Cocktail",
+  "cosmopolitan": "Cocktail",
+  "pina colada": "Cocktail",
+  "pinacolada": "Cocktail",
+  "bloody mary": "Cocktail",
+  "beer": "Beer",
+  "stout": "Beer",
+  "hefeweizen": "Beer",
+  "lager": "Beer",
+  "wine": "Wine",
+  "red wine": "Wine",
+  "white wine": "Wine",
+  "rose wine": "Wine",
+  "filter coffee": "Filter Coffee",
+  "filter kaapi": "Filter Coffee",
+  "filter coffee kaapi": "Filter Coffee",
+  "south indian filter coffee": "Filter Coffee",
+  "cappuccino": "Filter Coffee",
+  "latte": "Filter Coffee",
+  "americano": "Filter Coffee",
+  "espresso": "Filter Coffee",
+  "frappuccino": "Filter Coffee",
+  "mocha": "Filter Coffee",
+  "cold coffee": "Cold Coffee",
+  "iced coffee": "Cold Coffee",
+  "coffee": "Filter Coffee",
+  "tea": "Masala Chai",
+  "chai": "Masala Chai",
+  "masala chai": "Masala Chai",
+  "lassi": "Lassi",
+  "mango lassi": "Lassi",
+  "milkshake": "Cold Coffee",
+  "milk shake": "Cold Coffee",
+  "smoothie": "Cold Coffee",
+  "raita": "Curd Rice",
+  "burger": "Chicken Burger",
   "veg burger": "Veg Burger",
   "vegetable burger": "Veg Burger",
-
-  "nachos": "Nachos",
-  "loaded fries": "Loaded Fries",
-
-  "veg hakka noodles": "Veg Hakka Noodles",
+  "chicken burger": "Chicken Burger",
+  "sandwich": "Chicken Burger",
+  "vegetable sandwich": "Vegetable Sandwich",
+  "veg sandwich": "Vegetable Sandwich",
+  "chicken sandwich": "Chicken Burger",
+  "shawarma": "Chicken Seekh Kebab",
+  "kebab": "Chicken Seekh Kebab",
+  "kabab": "Chicken Seekh Kebab",
+  "arabic": "Chicken Seekh Kebab",
+  "chaap": "Kadai Paneer",
+  "chicken seekh kebab": "Chicken Seekh Kebab",
+  "chicken seekh kabab": "Chicken Seekh Kebab",
+  "pizza": "Farmhouse Pizza",
+  "margherita pizza": "Farmhouse Pizza",
+  "farmhouse pizza": "Farmhouse Pizza",
+  "pepperoni": "Farmhouse Pizza",
+  "pepperoni pizza": "Farmhouse Pizza",
+  "pasta": "Pasta",
+  "spaghetti": "Pasta",
+  "penne": "Pasta",
+  "lasagna": "Pasta",
+  "lasagne": "Pasta",
+  "macaroni": "Pasta",
+  "ravioli": "Pasta",
+  "risotto": "Pasta",
+  "gnocchi": "Pasta",
+  "bruschetta": "Garlic Bread",
+  "garlic bread": "Garlic Bread",
+  "pita": "Garlic Bread",
+  "biryani": "Veg Biryani",
+  "veg biryani": "Veg Biryani",
+  "vegetable biryani": "Veg Biryani",
+  "chicken biryani": "Veg Biryani",
+  "mutton biryani": "Veg Biryani",
+  "egg biryani": "Veg Biryani",
+  "fish biryani": "Veg Biryani",
+  "paratha": "Aloo Paratha",
+  "aloo paratha": "Aloo Paratha",
+  "parotta": "Aloo Paratha",
+  "kulcha": "Aloo Paratha",
+  "luchi": "Aloo Paratha",
+  "tandoori roti": "Tandoori Roti",
+  "roti": "Tandoori Roti",
+  "rotti": "Tandoori Roti",
+  "naan": "Tandoori Roti",
+  "waffle": "Waffle",
+  "waffles": "Waffle",
+  "pancake": "Pancake",
+  "pancakes": "Pancake",
+  "crepe": "Pancake",
+  "french toast": "Pancake",
+  "ice cream": "Ice Cream",
+  "icecream": "Ice Cream",
+  "gelato": "Ice Cream",
+  "sundae": "Ice Cream",
+  "kulfi": "Ice Cream",
+  "sorbet": "Ice Cream",
+  "brownie": "Chocolate Brownie",
+  "chocolate brownie": "Chocolate Brownie",
+  "cupcake": "Chocolate Brownie",
+  "cup cake": "Chocolate Brownie",
+  "tiramisu": "Chocolate Brownie",
+  "cake": "Chocolate Brownie",
+  "pastry": "Chocolate Brownie",
+  "donut": "Chocolate Brownie",
+  "chocolate": "Chocolate Brownie",
+  "choco": "Chocolate Brownie",
+  "mousse": "Chocolate Brownie",
+  "macaroon": "Chocolate Brownie",
+  "pie": "Chocolate Brownie",
+  "kesari": "Chocolate Brownie",
+  "rasmalai": "Chocolate Brownie",
+  "kheer": "Chocolate Brownie",
+  "rabri": "Chocolate Brownie",
+  "faluda": "Chocolate Brownie",
+  "churro": "Chocolate Brownie",
+  "chocolava": "Chocolate Brownie",
+  "custard": "Chocolate Brownie",
+  "creme brulee": "Chocolate Brownie",
+  "panna cotta": "Chocolate Brownie",
+  "pudding": "Chocolate Brownie",
+  "phirni": "Chocolate Brownie",
+  "malpua": "Chocolate Brownie",
+  "shrikhand": "Chocolate Brownie",
+  "mysore pak": "Chocolate Brownie",
+  "barfi": "Chocolate Brownie",
+  "fudge": "Chocolate Brownie",
+  "truffle": "Chocolate Brownie",
+  "baklava": "Chocolate Brownie",
+  "eclair": "Chocolate Brownie",
+  "banana split": "Chocolate Brownie",
+  "banana caramel": "Chocolate Brownie",
+  "salted caramel": "Chocolate Brownie",
+  "ferrero rocher": "Chocolate Brownie",
+  "fruit tart": "Chocolate Brownie",
+  "cookie": "Chocolate Brownie",
+  "churma": "Chocolate Brownie",
+  "red velvet": "Chocolate Brownie",
+  "croissant": "Chocolate Brownie",
+  "kesar pista": "Chocolate Brownie",
+  "shahi tukda": "Chocolate Brownie",
+  "payasam": "Chocolate Brownie",
+  "paan": "Chocolate Brownie",
+  "obbattu": "Chocolate Brownie",
+  "puran poli": "Chocolate Brownie",
+  "nolen gur": "Chocolate Brownie",
+  "marshmallow": "Chocolate Brownie",
+  "fruit cream": "Chocolate Brownie",
+  "ganache": "Chocolate Brownie",
+  "kunafa": "Chocolate Brownie",
+  "dessert": "Chocolate Brownie",
+  "chaat": "Chaat",
+  "bhel": "Chaat",
+  "dahipuri": "Chaat",
+  "dahi puri": "Chaat",
+  "dabeli": "Chaat",
+  "raj kachori": "Chaat",
+  "sev puri": "Chaat",
+  "kachori": "Chaat",
+  "misal pav": "Chaat",
+  "chutney": "Chaat",
+  "seafood": "Fish Curry Rice",
+  "sea food": "Fish Curry Rice",
+  "crab": "Fish Curry Rice",
+  "salmon": "Fish Curry Rice",
+  "calamari": "Fish Curry Rice",
+  "lobster": "Fish Curry Rice",
+  "oyster": "Fish Curry Rice",
+  "scallop": "Fish Curry Rice",
+  "chingri": "Fish Curry Rice",
+  "fish curry": "Fish Curry Rice",
+  "fish curry rice": "Fish Curry Rice",
+  "fish rice": "Fish Curry Rice",
+  "momos": "Veg Momos",
+  "momo": "Veg Momos",
+  "dumpling": "Veg Momos",
+  "dim sum": "Chicken Momos",
+  "veg momos": "Veg Momos",
+  "vegetable momos": "Veg Momos",
+  "chicken momos": "Chicken Momos",
+  "chicken momo": "Chicken Momos",
+  "thukpa": "Thukpa",
+  "soup": "Thukpa",
+  "shorba": "Thukpa",
+  "ramen": "Thukpa",
+  "pho": "Thukpa",
+  "khao suey": "Thukpa",
+  "khau suey": "Thukpa",
+  "laksa": "Thukpa",
+  "noodles": "Chow Mein",
+  "noodle": "Chow Mein",
+  "chowmein": "Chow Mein",
+  "chow mein": "Chow Mein",
   "hakka noodles": "Veg Hakka Noodles",
-
-  "chicken manchurian": "Chicken Manchurian",
-
-  // These dishes do not have a verified exact image in the mapping,
-  // so they deliberately return null instead of showing the wrong dish.
-  "manchurian": null,
-  "chaap": null,
-  "soya chaap": null,
-  "soy chaap": null,
-  "keema pav": null,
-  "chicken biryani": null,
-  "mutton biryani": null,
-  "egg biryani": null,
-  "fish biryani": null,
-  "pepperoni": null,
-  "pepperoni pizza": null,
-  "milkshake": null,
-  "milk shake": null,
-  "smoothie": null,
-  "pulao": null,
-  "pulav": null,
-  "litti": null,
-  "liti": null,
-  "naan": null,
-  "pita": null,
-  "falafel": null,
-  "fish fry": null,
-  "chicken curry": null,
-  "tandoori chicken": null,
-  "shawarma": null,
-  "kebab": null,
-  "kabab": null
-};
+  "hakka noodle": "Veg Hakka Noodles",
+  "chicken hakka noodles": "Chow Mein",
+  "chicken noodles": "Chow Mein",
+  "chop suey": "Chow Mein",
+  "pad thai": "Chow Mein",
+  "phad thai": "Chow Mein",
+  "nasi goreng": "Chow Mein",
+  "wonton": "Chow Mein",
+  "mai thai": "Chow Mein",
+  "maggi": "Chow Mein",
+  "fried rice": "Veg Fried Rice",
+  "veg fried rice": "Veg Fried Rice",
+  "chicken fried rice": "Veg Fried Rice",
+  "egg fried rice": "Veg Fried Rice",
+  "prawn fried rice": "Veg Fried Rice",
+  "vada": "Medu Vada",
+  "medu vada": "Medu Vada",
+  "medu wada": "Medu Vada",
+  "bonda": "Medu Vada",
+  "idli": "Idli Sambar",
+  "idly": "Idli Sambar",
+  "idli sambar": "Idli Sambar",
+  "dosa": "Masala Dosa",
+  "masala dosa": "Masala Dosa",
+  "appam": "Masala Dosa",
+  "uttapam": "Masala Dosa",
+  "pongal": "Masala Dosa",
+  "upma": "Masala Dosa",
+  "kharabath": "Masala Dosa",
+  "khara bhath": "Masala Dosa",
+  "puri saagu": "Masala Dosa",
+  "sabudana khichdi": "Masala Dosa",
+  "ragi mudde": "Masala Dosa",
+  "pesarattu": "Masala Dosa",
+  "bisi bele bath": "Masala Dosa",
+  "thali": "Gujarati Thali",
+  "buffet": "Gujarati Thali",
+  "brunch": "Gujarati Thali",
+  "andhra meal": "Gujarati Thali",
+  "veg platter": "Gujarati Thali",
+  "set menu": "Gujarati Thali",
+  "mezze platter": "Gujarati Thali",
+  "gujarati thali": "Gujarati Thali",
+  "haleem": "Haleem",
+  "falafel": "Chole Bhature",
+  "babaganoush": "Chole Bhature",
+  "babaganush": "Chole Bhature",
+  "puri": "Samosa",
+  "papad": "Samosa",
+  "pakoda": "Samosa",
+  "veg puff": "Samosa",
+  "fritter": "Samosa",
+  "paneer": "Kadai Paneer",
+  "panneer": "Kadai Paneer",
+  "panner": "Kadai Paneer",
+  "kadai paneer": "Kadai Paneer",
+  "tikka": "Chicken Tikka",
+  "veg tikka": "Kadai Paneer",
+  "paneer tikka": "Kadai Paneer",
+  "chole": "Chole Bhature",
+  "sushi": "Sushi",
+  "sashimi": "Sushi",
+  "tempura": "Sushi",
+  "bibimbap": "Sushi",
+  "kimchi": "Sushi",
+  "samosa": "Samosa",
+  "poha": "Poha",
+  "tawa pulav": "Poha",
+  "omelette": "Omelette",
+  "omelet": "Omelette",
+  "egg": "Omelette",
+  "frittata": "Omelette",
+  "shakshouka": "Omelette",
+  "english breakfast": "Omelette",
+  "steak": "Steak",
+  "taco": "Taco",
+  "burrito": "Taco",
+  "enchilada": "Taco",
+  "calzone": "Taco",
+  "fajita": "Taco",
+  "fish": "Fish Curry Rice",
+  "prawn": "Fish Curry Rice",
+  "salad": "Salad Platter",
+  "fattoush": "Salad Platter",
+  "fruit bowl": "Salad Platter",
+  "spring roll": "Veg Spring Rolls",
+  "spring rolls": "Veg Spring Rolls",
+  "chicken spring roll": "Chicken Lollipop",
+  "chicken spring rolls": "Chicken Lollipop",
+  "mangsho": "Kosha Mangsho",
+  "mutton": "Kosha Mangsho",
+  "beef": "Kosha Mangsho",
+  "meatball": "Kosha Mangsho",
+  "meat ball": "Kosha Mangsho",
+  "brain fry": "Kosha Mangsho",
+  "bheja": "Kosha Mangsho",
+  "gosht": "Kosha Mangsho",
+  "paya": "Kosha Mangsho",
+  "nalli nihari": "Kosha Mangsho",
+  "pandi curry": "Kosha Mangsho",
+  "pork": "Chicken Tikka",
+  "ribs": "Chicken Tikka",
+  "lamb": "Chicken Tikka",
+  "raan": "Chicken Tikka",
+  "dal": "Dal Makhani",
+  "dal fry": "Dal Makhani",
+  "dal tadka": "Dal Makhani",
+  "rajma": "Dal Makhani",
+  "kadhi": "Dal Makhani",
+  "lentil": "Dal Makhani",
+  "bhindi": "Dal Makhani",
+  "dum aloo": "Dal Makhani",
+  "ratatouille": "Dal Makhani",
+  "curry": "Butter Chicken",
+  "kofta": "Butter Chicken",
+  "masala": "Butter Chicken",
+  "sabzi": "Butter Chicken",
+  "subzi": "Butter Chicken",
+  "saag": "Butter Chicken",
+  "kolhapuri": "Butter Chicken",
+  "palya": "Butter Chicken",
+  "tandoori": "Chicken Tikka",
+  "dhokla": "Chaat",
+  "khichda": "Chaat",
+  "mashed potato": "Chaat",
+  "stuffed mushroom": "Chaat",
+  "mushroom": "Chaat",
+  "vegetable stew": "Chaat",
+  "mozzarella sticks": "Chaat",
+  "jalapeno": "Chaat",
+  "cheese ball": "Chaat",
+  "cheese corn": "Chaat",
+  "cheese chilli": "Chaat",
+  "hot dog": "Loaded Fries",
+  "cheese": "Chaat",
+  "pulao": "Veg Biryani",
+  "pulav": "Veg Biryani",
+  "rice": "Veg Biryani",
+  "litti": "Veg Biryani",
+  "liti": "Veg Biryani",
+  "aloo": "Loaded Fries",
+  "roll": "Chicken Lollipop",
+  "chicken": "Chicken Tikka",
+  "jal jeera": "Mocktail",
+  "dumplings": "Veg Momos",
+  "veg momo": "Veg Momos",
+  "veg hakka noodles": "Veg Hakka Noodles",
+  "soya chaap": "Kadai Paneer",
+  "soy chaap": "Kadai Paneer",
+  "fish fry": "Fish Curry Rice",
+  "bhaja": "Aloo Paratha",
+  "achari": "Kadai Paneer",
+  "afghan": "Chicken Seekh Kebab",
+  "afghani": "Chicken Seekh Kebab",
+  "shake": "Cold Coffee",
+  "meal": "Gujarati Thali",
+};;
 
 function normalizeFoodName(name) {
   return String(name || '')
@@ -1898,116 +2287,90 @@ infoOverlay.addEventListener('click', (e) => {
 // ============================================================
 
 function openBrowseMenu() {
-  appendCard(
-    (card) => {
-      card.innerHTML = `
-        <div class="wa-browse-header">
-          <div>
-            <div class="wa-browse-title">
-              Search Food
-            </div>
-
-            <div class="wa-browse-subtitle">
-              Find dishes, cuisines or restaurants
-            </div>
-          </div>
-        </div>
-
-        <div class="wa-browse-search">
-          <input
-            type="text"
-            placeholder="Search for food..."
-            autocomplete="off"
-          />
-
-          <button
-            type="button"
-            class="wa-primary-btn"
-          >
-            ${icon('search', { size: 15 })}
-            Search
-          </button>
-        </div>
-
-        <div class="wa-browse-results"></div>
-      `;
-
-      const input =
-        card.querySelector(
-          '.wa-browse-search input'
-        );
-
-      const button =
-        card.querySelector(
-          '.wa-browse-search button'
-        );
-
-      const results =
-        card.querySelector(
-          '.wa-browse-results'
-        );
-
-      const performSearch = async () => {
-        const query =
-          input.value.trim();
-
-        if (!query) {
-          results.innerHTML =
-            '<div class="info-empty">Enter something to search.</div>';
-          return;
-        }
-
-        results.innerHTML =
-          skeletonCardsHTML(6);
-
-        await renderBrowseResults(
-          results,
-          query
-        );
-      };
-
-      button.addEventListener(
-        'click',
-        performSearch
-      );
-
-      input.addEventListener(
-        'keydown',
-        (event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            performSearch();
-          }
-        }
-      );
-
-      setTimeout(() => input.focus(), 0);
-    },
-    { wide: true }
+  openInfoModal(
+    'Search Food',
+    `
+      <div class="wa-browse-search">
+        <input type="text" placeholder="Search for food..." autocomplete="off" />
+        <button type="button" class="wa-primary-btn">${icon('search', { size: 15 })} Search</button>
+      </div>
+      <div class="wa-browse-results"></div>
+    `,
   );
+
+  const input = infoBodyEl.querySelector('.wa-browse-search input');
+  const button = infoBodyEl.querySelector('.wa-browse-search button');
+  const results = infoBodyEl.querySelector('.wa-browse-results');
+
+  const performSearch = async () => {
+    const query = input.value.trim();
+    results.innerHTML = skeletonCardsHTML(6);
+    await renderBrowseResults(results, query);
+  };
+
+  button.addEventListener('click', performSearch);
+
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      performSearch();
+    }
+  });
+
+  results.innerHTML = skeletonCardsHTML(6);
+  renderBrowseResults(results, '');
+
+  setTimeout(() => input.focus(), 0);
 }
+
+// Cached once per page load - the default "show the menu" view (no query
+// typed yet) would otherwise re-fetch the entire catalog every time the
+// sheet is opened, which is a real cost now that the catalog is
+// Zomato-scale (thousands of dishes) rather than the original ~80.
+let browseAllEntriesCache = null;
 
 async function renderBrowseResults(
   container,
   query
 ) {
   try {
-    const res = await fetch(
-      `/sim/catalog?q=${encodeURIComponent(query)}`
-    );
+    let entries;
 
-    if (!res.ok) {
-      throw new Error(
-        `catalog responded ${res.status}`
+    if (query) {
+      const res = await fetch(
+        `/sim/catalog?q=${encodeURIComponent(query)}`
       );
+
+      if (!res.ok) {
+        throw new Error(
+          `catalog responded ${res.status}`
+        );
+      }
+
+      const data = await res.json();
+      entries =
+        data.entries ||
+        data.results ||
+        [];
+    } else {
+      if (!browseAllEntriesCache) {
+        const res = await fetch('/sim/catalog');
+
+        if (!res.ok) {
+          throw new Error(
+            `catalog responded ${res.status}`
+          );
+        }
+
+        const data = await res.json();
+        browseAllEntriesCache = (data.restaurants || []).flatMap(
+          (restaurant) =>
+            restaurant.items.map((item) => ({ restaurant, item })),
+        );
+      }
+
+      entries = browseAllEntriesCache;
     }
-
-    const data = await res.json();
-
-    const entries =
-      data.entries ||
-      data.results ||
-      [];
 
     container.innerHTML = '';
 

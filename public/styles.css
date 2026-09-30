@@ -1465,6 +1465,40 @@ img {
   margin-top: 4px;
 }
 
+/* Browse-menu search bar inside the info sheet */
+.wa-browse-search {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px 12px;
+}
+
+.wa-browse-search input {
+  flex: 1;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid var(--wa-line-strong);
+  background: var(--wa-backdrop);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--wa-ink);
+  outline: none;
+}
+
+.wa-browse-search input:focus {
+  border-color: var(--wa-green-deep);
+  background: #fff;
+}
+
+.wa-browse-search .wa-primary-btn {
+  width: auto;
+  padding: 9px 16px;
+  white-space: nowrap;
+}
+
+.wa-browse-results {
+  padding: 0 12px 12px;
+}
+
 /* Browse-menu grid inside sheet */
 .browse-grid {
   display: grid;

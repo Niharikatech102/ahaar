@@ -27,7 +27,10 @@ export type ConversationState =
 export interface Session {
   phone: string;
   state: ConversationState;
+  /** Only the most recently shown batch (at most 3) - what a numbered reply ("1"/"2"/"3") resolves against. */
   shownRecommendations: Recommendation[];
+  /** Every item id shown across every batch of the current search (unlike shownRecommendations, this only ever grows) - how "give me more" avoids ever repeating a dish already seen this search, even once shownRecommendations has moved on to a later batch. */
+  excludedItemIds: string[];
   /** The free-text search behind the current shownRecommendations - how "give me more" re-runs the same search excluding what's already been shown. */
   lastQuery: string | null;
   /** The dish currently being configured (between picking it and confirming a quantity) - not yet in the cart. */
@@ -55,6 +58,7 @@ export function freshSession(phone: string, now: number): Session {
     phone,
     state: 'IDLE',
     shownRecommendations: [],
+    excludedItemIds: [],
     lastQuery: null,
     selected: null,
     quantity: null,
@@ -77,6 +81,7 @@ export function resetToIdle(session: Session, now: number): Session {
     ...session,
     state: 'IDLE',
     shownRecommendations: [],
+    excludedItemIds: [],
     lastQuery: null,
     selected: null,
     quantity: null,
@@ -147,6 +152,7 @@ export class SessionStore {
         phone: row.phone,
         state: row.state,
         shownRecommendations: row.shownRecommendations,
+        excludedItemIds: row.excludedItemIds,
         lastQuery: row.lastQuery,
         selected: row.selected,
         quantity: row.quantity,
@@ -175,6 +181,7 @@ export class SessionStore {
           phone: session.phone,
           state: session.state,
           shownRecommendations: session.shownRecommendations,
+          excludedItemIds: session.excludedItemIds,
           lastQuery: session.lastQuery,
           selected: session.selected,
           quantity: session.quantity,
@@ -194,6 +201,7 @@ export class SessionStore {
           set: {
             state: session.state,
             shownRecommendations: session.shownRecommendations,
+            excludedItemIds: session.excludedItemIds,
             lastQuery: session.lastQuery,
             selected: session.selected,
             quantity: session.quantity,
