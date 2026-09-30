@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { handleMessage, type Ctx } from '../src/core/stateMachine.js';
+import { handleMessage, resolveMaxPrice, resolveVegOnly, type Ctx } from '../src/core/stateMachine.js';
 import { freshSession, type Session } from '../src/core/session.js';
 import { getUserByPhone, guestProfile } from '../src/domain/users.js';
 import { statusAt } from '../src/domain/delivery.js';
@@ -604,6 +604,50 @@ describe('GIVE ME MORE', () => {
     }
 
     expect(result.replies[0]).toMatch(/everything i've got/i);
+  });
+});
+
+describe('saved preferences apply automatically to every future search', () => {
+  function stepWithPrefs(session: Session, text: string, now: number, preferences: UserProfile['preferences']) {
+    return handleMessage(session, text, { ...ctxAt(now), profile: { ...cachedProfile, preferences } });
+  }
+
+  const vegPrefs: UserProfile['preferences'] = { cuisines: [], dietary: 'veg', spiceLevel: null, budgetMax: null };
+
+  it('filters to veg-only without the query mentioning veg at all, and keeps doing so on a second search', () => {
+    let session = freshSession(PHONE, NOW_0);
+    const first = stepWithPrefs(session, 'biryani', NOW_0, vegPrefs);
+    expect(first.recommendations!.length).toBeGreaterThan(0);
+    for (const r of first.recommendations!) expect(r.entry.item.veg).toBe(true);
+
+    session = freshSession(PHONE, NOW_0);
+    const second = stepWithPrefs(session, 'pizza', NOW_0, vegPrefs);
+    for (const r of second.recommendations!) expect(r.entry.item.veg).toBe(true);
+  });
+
+  it('an explicit "non-veg" in the message overrides the saved veg preference for that search', () => {
+    expect(resolveVegOnly(false, 'non-veg biryani', vegPrefs)).toBe(false);
+    expect(resolveVegOnly(false, 'biryani', vegPrefs)).toBe(true);
+  });
+
+  it('a query-level maxPrice always wins over the saved budget', () => {
+    const budgetPrefs: UserProfile['preferences'] = { cuisines: [], dietary: null, spiceLevel: null, budgetMax: 150 };
+    expect(resolveMaxPrice(400, budgetPrefs)).toBe(400);
+    expect(resolveMaxPrice(undefined, budgetPrefs)).toBe(150);
+  });
+
+  it('GIVE ME MORE keeps honoring the saved veg preference across pagination', () => {
+    let session = freshSession(PHONE, NOW_0);
+    session = stepWithPrefs(session, 'biryani', NOW_0, vegPrefs).session;
+    const more = stepWithPrefs(session, 'GIVE ME MORE', NOW_0 + 1000, vegPrefs);
+    for (const r of more.recommendations ?? []) expect(r.entry.item.veg).toBe(true);
+  });
+
+  it('falls back to the saved budget when the query names no price of its own', () => {
+    const budgetPrefs: UserProfile['preferences'] = { cuisines: [], dietary: null, spiceLevel: null, budgetMax: 150 };
+    const session = freshSession(PHONE, NOW_0);
+    const result = stepWithPrefs(session, 'biryani', NOW_0, budgetPrefs);
+    for (const r of result.recommendations ?? []) expect(r.entry.item.price).toBeLessThanOrEqual(150);
   });
 });
 

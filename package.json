@@ -16,7 +16,7 @@
     "test:watch": "vitest",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/db/seed.ts",
-    "db:seed:mealdb": "tsx src/db/seedMealDb.ts"
+    "db:seed:zomato": "tsx src/db/seedZomato.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.38.3",

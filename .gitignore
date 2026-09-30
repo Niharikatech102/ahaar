@@ -12,5 +12,11 @@ coverage/
 src/data/sessions.json
 src/data/added_users.json
 
+# One-time seed input for db:seed:zomato - a large derived artifact, not
+# something the app reads at runtime (unlike src/data/*.json). Regenerate
+# from zomato.csv via zomato_transform.py if needed again.
+zomato-derived.json
+zomato.csv
+
 .vercel
 .env*

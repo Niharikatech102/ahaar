@@ -212,11 +212,17 @@ export function recommend(
 
   // Diversity constraint: at most one dish per restaurant, so three
   // recommendations are three real choices rather than one kitchen's menu.
-  const seenRestaurants = new Set<string>();
+  // Keyed by name rather than id - a chain with multiple branches (each a
+  // distinct restaurant row/id at its own address) should still only take
+  // one slot, since the recommendation card shows the name, not the address,
+  // and two "Mojo Pizza" cards in one batch reads as the same restaurant
+  // twice regardless of which branch each one actually is.
+  const seenRestaurantNames = new Set<string>();
   const diverse: Recommendation[] = [];
   for (const candidate of scored) {
-    if (seenRestaurants.has(candidate.entry.restaurant.id)) continue;
-    seenRestaurants.add(candidate.entry.restaurant.id);
+    const key = candidate.entry.restaurant.name.trim().toLowerCase();
+    if (seenRestaurantNames.has(key)) continue;
+    seenRestaurantNames.add(key);
     diverse.push(candidate);
     if (diverse.length >= limit) break;
   }

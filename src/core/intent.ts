@@ -128,3 +128,12 @@ export function parseQuery(text: string): ParsedQuery {
 
   return { raw, vegOnly, maxPrice };
 }
+
+/**
+ * True when the message itself explicitly asks for non-veg - the one signal
+ * strong enough to override a saved vegetarian/vegan preference for this one
+ * search, rather than silently filtering out what was just asked for.
+ */
+export function explicitlyRequestsNonVeg(text: string): boolean {
+  return NON_VEG_PATTERN.test(text);
+}

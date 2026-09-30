@@ -3,8 +3,9 @@ import { applicablePromos, bestApplicablePromo, evaluatePromo, getPromoByCode } 
 import { computeBill, generateOrderId, type CartItem, type Order } from '../domain/order.js';
 import { statusAt } from '../domain/delivery.js';
 import { getItemById, getRestaurantById } from '../domain/catalog.js';
-import type { PastOrder, Recommendation, UserProfile } from '../domain/types.js';
+import type { PastOrder, Recommendation, UserPreferences, UserProfile } from '../domain/types.js';
 import {
+  explicitlyRequestsNonVeg,
   isBestDiscountRequest,
   isTotalRequest,
   parseAddCommand,
@@ -50,6 +51,24 @@ export interface StepResult {
   ratingsToRecord?: PastOrder[];
   /** The batch of recommendation cards freshly shown this turn (a search or "give me more"), for a UI that wants structured data instead of parsing the reply text. Not the cumulative list - just what's new right now. */
   recommendations?: Recommendation[];
+}
+
+/**
+ * Falls back to the user's saved dietary preference when the message itself
+ * doesn't ask for veg - a saved "veg"/"vegan" preference should hold on
+ * every future search, not just the one where it happened to be typed out.
+ * An explicit "non-veg" in this message still wins, since a saved
+ * preference shouldn't silently filter out what was just asked for.
+ */
+export function resolveVegOnly(queryVegOnly: boolean, rawText: string, prefs: UserPreferences): boolean {
+  if (explicitlyRequestsNonVeg(rawText)) return false;
+  if (queryVegOnly) return true;
+  return prefs.dietary === 'veg' || prefs.dietary === 'vegan';
+}
+
+/** Falls back to the user's saved budget when this message doesn't name its own. */
+export function resolveMaxPrice(queryMaxPrice: number | undefined, prefs: UserPreferences): number | undefined {
+  return queryMaxPrice ?? prefs.budgetMax ?? undefined;
 }
 
 function defaultAddressLine(profile: UserProfile): string | null {
@@ -155,8 +174,8 @@ function handleIdle(session: Session, text: string, ctx: Ctx): StepResult {
 
   const query = ctx.parsedQueryOverride ?? parseQuery(trimmed);
   const recs = recommend(query.raw, ctx.profile.orderHistory, {
-    vegOnly: query.vegOnly,
-    maxPrice: query.maxPrice,
+    vegOnly: resolveVegOnly(query.vegOnly, trimmed, ctx.profile.preferences),
+    maxPrice: resolveMaxPrice(query.maxPrice, ctx.profile.preferences),
     preferences: ctx.profile.preferences,
   });
 
@@ -187,6 +206,8 @@ function handleMoreRecommendations(session: Session, ctx: Ctx): StepResult {
 
   const alreadyShown = session.shownRecommendations.map((r) => r.entry.item.id);
   const more = recommend(session.lastQuery, ctx.profile.orderHistory, {
+    vegOnly: resolveVegOnly(false, session.lastQuery, ctx.profile.preferences),
+    maxPrice: resolveMaxPrice(undefined, ctx.profile.preferences),
     preferences: ctx.profile.preferences,
     excludeItemIds: alreadyShown,
   });
@@ -259,7 +280,11 @@ function handleAddCommand(session: Session, query: string, ctx: Ctx): StepResult
     return { session, replies: [msg.cartBusyMessage()] };
   }
 
-  const recs = recommend(query, ctx.profile.orderHistory, { preferences: ctx.profile.preferences });
+  const recs = recommend(query, ctx.profile.orderHistory, {
+    vegOnly: resolveVegOnly(false, query, ctx.profile.preferences),
+    maxPrice: resolveMaxPrice(undefined, ctx.profile.preferences),
+    preferences: ctx.profile.preferences,
+  });
   if (recs.length === 0) {
     return { session, replies: [msg.addItemNotFoundMessage(query)] };
   }

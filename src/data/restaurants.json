@@ -481,7 +481,7 @@
           "sweet",
           "cooling"
         ],
-        "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c4/Pakistani_Food_Karahi_Beef.jpg/500px-Pakistani_Food_Karahi_Beef.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+        "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f1/Salt_lassi.jpg/500px-Salt_lassi.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
       },
       {
         "id": "i0507",
@@ -547,7 +547,8 @@
           "spicy",
           "starter",
           "appetizer"
-        ]
+        ],
+        "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Chicken_65_%28Dish%29.jpg/500px-Chicken_65_%28Dish%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
       }
     ]
   },
@@ -660,7 +661,7 @@
           "chinese",
           "light"
         ],
-        "image": "https://upload.wikimedia.org/wikipedia/commons/8/8d/ChineseDishLogo.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+        "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Homemade_Chow_mein_with_shrimps_and_meat_with_a_choy_and_Choung.jpg/500px-Homemade_Chow_mein_with_shrimps_and_meat_with_a_choy_and_Choung.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
       },
       {
         "id": "i0804",
@@ -672,7 +673,7 @@
           "spicy",
           "paneer"
         ],
-        "image": "https://upload.wikimedia.org/wikipedia/commons/8/8d/ChineseDishLogo.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
+        "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Kadai_Paneer-Delhi-12.jpg/500px-Kadai_Paneer-Delhi-12.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
       },
       {
         "id": "i0805",
@@ -1047,7 +1048,8 @@
           "appetizer",
           "bengali",
           "fried"
-        ]
+        ],
+        "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/Fish_cakes_food_dinner.jpg/500px-Fish_cakes_food_dinner.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
       }
     ]
   },
